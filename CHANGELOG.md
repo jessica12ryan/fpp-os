@@ -1,3 +1,9 @@
+## [0.0.39] - 2026-05-15
+
+- Install and enable systemd-timesyncd service (jessica12ryan)
+
+---
+
 ## [0.0.38] - 2026-05-15
 
 - Update README to indicate beta version (jessica12ryan)
