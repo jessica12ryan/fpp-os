@@ -1,4 +1,4 @@
-# FPP-OS - Falcon Player OS
+# FPP-OS - Falcon Player OS (Beta)
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
