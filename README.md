@@ -1,12 +1,10 @@
-# FPP-OS - Falcon Player OS (EARLY BETA)
+# FPP-OS - Falcon Player OS
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
 This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine.
 
 **WARNING: All data will be wiped on local drive automatically once booted from the ISO**
-
-EARLY BETA STAGES: Right now, this repository is in BETA stages. It is expected to release an official ISO after FPP 10 is released as we are building on Debian 13 and preparing for an up to date release.
 
 This version of FPP is not officially supported by the FalconChristmas/FPP team. All issues from this installation should be logged to THIS repo. We will test and confirm whether the issue is isolated to our repo, and recreate the ticket on the FPP repo if necessary. The FPP team will not respond to any issues from this installation.
 
