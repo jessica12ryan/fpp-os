@@ -1,3 +1,9 @@
+## [0.0.40] - 2026-05-15
+
+- Refactor build-release workflow for versioning and tagging (jessica12ryan)
+
+---
+
 ## [0.0.39] - 2026-05-15
 
 - Install and enable systemd-timesyncd service (jessica12ryan)
