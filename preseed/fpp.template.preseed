@@ -77,7 +77,7 @@ d-i preseed/late_command string \
     in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Post_Install.sh -o /root/FPP_Post_Install.sh && chmod 700 /root/FPP_Post_Install.sh'; \
     in-target bash -c 'echo "" >> /root/FPP_Install.sh && cat /root/FPP_Post_Install.sh >> /root/FPP_Install.sh && chmod 700 /root/FPP_Install.sh && rm /root/FPP_Post_Install.sh'; \
     in-target bash -c 'printf "[Unit]\nDescription=FPP First Boot Install\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=oneshot\nEnvironment=HOME=/root\nEnvironment=USER=root\nEnvironment=SHELL=/bin/bash\nExecStart=/bin/bash -lc \"/root/FPP_Install.sh --img --branch v9.5 --yes\"\nExecStartPost=/bin/systemctl disable fpp-install.service\nRemainAfterExit=yes\nStandardOutput=journal+console\nStandardError=journal+console\n\n[Install]\nWantedBy=multi-user.target\n" > /etc/systemd/system/fpp-install.service'; \
-    in-target systemctl enable fpp-install.service
+    in-target systemctl enable fpp-install.service; \
     in-target bash -c 'printf "register debian-installer/dummy text\nset debian-installer/dummy "Installation complete! Please remove your installation media (USB/ISO) now. Press Enter to shut down. On next boot, FPP will install."\nfset debian-installer/dummy seen false\ninput high debian-installer/dummy\ngo\n" | debconf-communicate'
 
 ### Finish
