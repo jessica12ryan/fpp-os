@@ -18,7 +18,7 @@ def patch_grub(cfg_file: str, preseed_append: str) -> None:
     # Build an explicitly reliable, clean FPP entry
     fpp_block = f"""
 set default=0
-set timeout=5
+set timeout=0
 set theme=
 
 menuentry 'FPP Install (Automated)' --class debian --class gnu-linux --class gnu --class os {{
