@@ -1,0 +1,88 @@
+#### FPP-OS Preseed Configuration
+
+### Locale and keyboard
+d-i debian-installer/locale string en_US.UTF-8
+d-i keyboard-configuration/xkb-keymap select us
+
+### Network configuration
+d-i netcfg/choose_interface select auto
+d-i netcfg/wireless_security_type select ask
+d-i netcfg/get_hostname string fpp
+d-i netcfg/get_domain string local
+d-i netcfg/hostname string fpp
+
+### Mirror settings - will fetch latest Debian 13
+d-i mirror/country string manual
+d-i mirror/http/hostname string deb.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+d-i mirror/suite string trixie
+
+### Account setup
+# Set root account
+d-i passwd/root-login boolean true
+d-i passwd/root-password password falcon
+d-i passwd/root-password-again password falcon
+# Do not create a normal user
+d-i passwd/make-user boolean false
+d-i passwd/user-fullname string
+d-i passwd/username string
+
+### Clock and time zone
+d-i clock-setup/utc boolean true
+d-i time/zone string America/New_York
+d-i clock-setup/ntp boolean true
+
+### Automatic partitioning
+d-i partman-auto/method string regular
+d-i partman-auto/choose_recipe select atomic
+
+# Automatically use first available disk
+d-i partman-auto/init_automatically_partition select biggest_free
+
+# Wipe existing partitions
+d-i partman-partitioning/confirm_write_new_label boolean true
+
+# Automatically confirm partitioning
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+d-i partman-auto/confirm boolean true
+d-i partman-plugin/confirm_nooverwrite boolean true
+
+### Package selection - minimal, no GUI, no extras
+tasksel tasksel/first multiselect
+d-i pkgsel/include string openssh-server curl
+d-i pkgsel/upgrade select full-upgrade
+d-i pkgsel/update-policy select none
+popularity-contest popularity-contest/participate boolean false
+
+# Explicitly avoid any desktop/GUI tasks
+d-i pkgsel/install-recommends boolean false
+
+### Bootloader
+# Force UEFI installation settings
+d-i partman-efi/non_efi_system boolean true
+d-i grub-installer/force-efi-extra-removable boolean true
+# GRUB Install
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean false
+d-i grub-installer/bootdev string default
+
+### Post-install: run FPP install script
+# This runs after the base system is installed and before reboot
+# Uses printf to correctly write newlines into the systemd unit file
+d-i preseed/late_command string \
+    in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Install.sh -o /root/FPP_Install.sh && chmod 700 /root/FPP_Install.sh'; \
+    in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Post_Install.sh -o /root/FPP_Post_Install.sh && chmod 700 /root/FPP_Post_Install.sh'; \
+    in-target bash -c 'echo "" >> /root/FPP_Install.sh && cat /root/FPP_Post_Install.sh >> /root/FPP_Install.sh && chmod 700 /root/FPP_Install.sh && rm /root/FPP_Post_Install.sh'; \
+    in-target bash -c 'printf "[Unit]\nDescription=FPP First Boot Install\nAfter=network-online.target\nWants=network-online.target\n\n[Service]\nType=oneshot\nEnvironment=HOME=/root\nEnvironment=USER=root\nEnvironment=SHELL=/bin/bash\nExecStart=/bin/bash -lc \"/root/FPP_Install.sh --img --branch master --yes\"\nExecStartPost=/bin/systemctl disable fpp-install.service\nRemainAfterExit=yes\nStandardOutput=journal+console\nStandardError=journal+console\n\n[Install]\nWantedBy=multi-user.target\n" > /etc/systemd/system/fpp-install.service'; \
+    in-target systemctl enable fpp-install.service
+    in-target bash -c 'printf "register debian-installer/dummy text\nset debian-installer/dummy "Installation complete! Please remove your installation media (USB/ISO) now, then press Enter to reboot."\nfset debian-installer/dummy seen false\ninput high debian-installer/dummy\ngo\n" | debconf-communicate'
+
+### Finish
+# Tell the installer not to automatically reboot
+d-i finish-install/keep-consoles boolean true
+
+# Force a clean poweroff/shutdown at the very end
+d-i debian-installer/exit/poweroff boolean true

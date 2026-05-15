@@ -1,0 +1,22 @@
+# Build outputs
+*.iso
+*.iso.sha256
+*.iso.md5
+
+# Temporary build directories
+/tmp/
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
