@@ -15,7 +15,7 @@ on:
         description: 'Release tag (e.g. v1.0.0). Leave blank to auto-generate.'
         required: false
         default: ''
-        
+
 jobs:
   build-iso:
     name: Build FPP-OS ISO
@@ -28,97 +28,36 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed so git log/tag history is fully available
 
       - name: Install dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            xorriso \
-            isolinux \
-            syslinux-common \
-            rsync \
-            curl \
-            python3 \
-            ca-certificates \
-            cpio \
-            gzip \
-            file \
-            fdisk \
-            mtools \
-            dosfstools
+            xorriso isolinux syslinux-common rsync curl \
+            python3 ca-certificates cpio gzip file fdisk mtools dosfstools
 
       - name: Read and bump version
         id: version
         run: |
           VERSION_FILE="VERSION.txt"
-
           CURRENT_VERSION=$(cat "$VERSION_FILE")
           echo "Current version: $CURRENT_VERSION"
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-
-          # If patch is empty → start patch series
-          if [[ -z "$PATCH" ]]; then
-            PATCH=0
-          fi
-
-          # Decide increment logic:
-          # If patch exists → increment patch
-          # If no patch → create .1
-          if [[ "$CURRENT_VERSION" == "$MAJOR.$MINOR" ]]; then
-            NEW_VERSION="${MAJOR}.${MINOR}.1"
-          else
-            NEW_PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-          fi
-
-          echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
-          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          PATCH="${PATCH:-0}"
+          NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
 
           echo "New version: $NEW_VERSION"
-
-          # write it back to file
           echo "$NEW_VERSION" > "$VERSION_FILE"
-          
-      - name: Commit updated VERSION.txt
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add VERSION.txt
-          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push
+          echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update CHANGELOG.md
-        run: |
+          # Capture LAST_TAG NOW — before any new commits or tags exist
           git fetch --tags
-
-          # Find the last version tag (ignore 'latest')
           LAST_TAG=$(git tag --sort=-version:refname | grep -v "^latest$" | head -1)
-
-          if [[ -z "$LAST_TAG" ]]; then
-            GIT_LOG=$(git log --pretty=format:"- %s (%an)" HEAD)
-          else
-            GIT_LOG=$(git log --pretty=format:"- %s (%an)" "${LAST_TAG}..HEAD")
-          fi
-
-          # Strip out automated bot commits
-          GIT_LOG=$(echo "$GIT_LOG" | grep -v "github-actions" || true)
-
-          DATE=$(date -u +"%Y-%m-%d")
-
-          ENTRY="## [${{ steps.version.outputs.version }}] - ${DATE}\n\n${GIT_LOG}\n\n---\n\n"
-
-          if [[ -f CHANGELOG.md ]]; then
-            echo -e "${ENTRY}$(cat CHANGELOG.md)" > CHANGELOG.md
-          else
-            echo -e "# Changelog\n\n${ENTRY}" > CHANGELOG.md
-          fi
-
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for ${{ steps.version.outputs.version }}" || echo "No changes"
-          git push
+          echo "Last tag: ${LAST_TAG:-none}"
+          echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Download latest FPP install script
         run: |
@@ -126,16 +65,42 @@ jobs:
             https://raw.githubusercontent.com/FalconChristmas/fpp/master/SD/FPP_Install.sh \
             -o SD/FPP_Install.sh
           chmod +x SD/FPP_Install.sh
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add SD/FPP_Install.sh
-          git commit -m "Update FPP_Install.sh from upstream" || echo "No changes"
-          git push
 
-      - name: Create branch
+      - name: Update CHANGELOG.md
+        run: |
+          LAST_TAG="${{ steps.version.outputs.last_tag }}"
+          CURRENT_VERSION="${{ steps.version.outputs.version }}"
+
+          if [[ -z "$LAST_TAG" ]]; then
+            GIT_LOG=$(git log --pretty=format:"- %s (%an)")
+          else
+            GIT_LOG=$(git log --pretty=format:"- %s (%an)" "${LAST_TAG}..HEAD")
+          fi
+
+          FILTERED_LOG=$(echo "$GIT_LOG" | grep -v "github-actions") || FILTERED_LOG=""
+
+          echo "Commits since ${LAST_TAG:-beginning}:"
+          echo "$FILTERED_LOG"
+
+          DATE=$(date -u +"%Y-%m-%d")
+          ENTRY="## [${CURRENT_VERSION}] - ${DATE}\n\n${FILTERED_LOG}\n\n---\n\n"
+
+          if [[ -f CHANGELOG.md ]]; then
+            echo -e "${ENTRY}$(cat CHANGELOG.md)" > CHANGELOG.md
+          else
+            echo -e "# Changelog\n\n${ENTRY}" > CHANGELOG.md
+          fi
+
+      - name: Commit and push pre-build changes
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+          git add VERSION.txt CHANGELOG.md SD/FPP_Install.sh
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git push
+
+      - name: Create version branch
+        run: |
           git checkout -B "${{ steps.version.outputs.version }}"
           git push origin "${{ steps.version.outputs.version }}" --force
 
@@ -169,25 +134,18 @@ jobs:
           cat "${ISO_FILE}.sha256"
           cat "${ISO_FILE}.md5"
 
-      - name: Determine release tag
-        id: tag
-        run: |
-          TAG="${{ steps.version.outputs.version }}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
       - name: Read latest CHANGELOG entry
         id: changelog
         run: |
-          # Extract everything between the first and second '---' separator
           NOTES=$(awk '/^---$/{n++} n==1{next} n==2{exit} {print}' CHANGELOG.md | tail -n +3)
           echo "notes<<EOF" >> "$GITHUB_OUTPUT"
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
-          
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
           body: |
             ## FPP-OS Install ISO
@@ -215,8 +173,8 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Update Latest Tag
+
+      - name: Update latest tag
         run: |
           git tag -f latest
           git push origin latest --force
