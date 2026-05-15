@@ -1,3 +1,9 @@
+## [0.0.37] - 2026-05-15
+
+- More improvements (jessica12ryan)
+
+---
+
 ## [0.0.36] - 2026-05-15
 
 - Fix command syntax in fpp.template.preseed (jessica12ryan)
