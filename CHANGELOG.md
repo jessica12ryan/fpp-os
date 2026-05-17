@@ -1,3 +1,11 @@
+## [0.0.47] - 2026-05-17
+
+- Bump version from 0.0.45 to 0.0.46 (jessica12ryan)
+- Update README.md (jessica12ryan)
+- Refactor GitHub Actions to use version output for release (jessica12ryan)
+
+---
+
 ## [0.0.46] - 2026-05-17
 
 - Reorder commit step for VERSION.txt in workflow (jessica12ryan)
