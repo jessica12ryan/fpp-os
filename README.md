@@ -6,6 +6,8 @@ This repository automatically builds a bootable FPP-OS ISO that will automatical
 
 **WARNING: All data will be wiped on local drive automatically once booted from the ISO**
 
+The current version of FPP-OS uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
+
 This version of FPP is not officially supported by the FalconChristmas/FPP team. All issues from this installation should be logged to THIS repo. We will test and confirm whether the issue is isolated to our repo, and recreate the ticket on the FPP repo if necessary. The FPP team will not respond to any issues from this installation.
 
 This ISO uses a network installer. You must have an internet connection to run and install the ISO.
