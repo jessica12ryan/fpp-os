@@ -90,38 +90,6 @@ jobs:
           git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push
 
-      - name: Update CHANGELOG.md
-        run: |
-          git fetch --tags
-
-          # Find the last version tag (ignore 'latest')
-          LAST_TAG=$(git tag --sort=-version:refname | grep -v "^latest$" | head -1)
-
-          if [[ -z "$LAST_TAG" ]]; then
-            GIT_LOG=$(git log --pretty=format:"- %s (%an)" HEAD)
-          else
-            GIT_LOG=$(git log --pretty=format:"- %s (%an)" "${LAST_TAG}..HEAD")
-          fi
-
-          # Strip out automated bot commits
-          GIT_LOG=$(echo "$GIT_LOG" | grep -v "github-actions" || true)
-
-          DATE=$(date -u +"%Y-%m-%d")
-
-          ENTRY="## [${{ steps.version.outputs.version }}] - ${DATE}\n\n${GIT_LOG}\n\n---\n\n"
-
-          if [[ -f CHANGELOG.md ]]; then
-            echo -e "${ENTRY}$(cat CHANGELOG.md)" > CHANGELOG.md
-          else
-            echo -e "# Changelog\n\n${ENTRY}" > CHANGELOG.md
-          fi
-
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for ${{ steps.version.outputs.version }}" || echo "No changes"
-          git push
-
       - name: Download latest FPP install script
         run: |
           curl -fsSL \
@@ -176,6 +144,38 @@ jobs:
         run: |
           TAG="${{ steps.version.outputs.version }}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Update CHANGELOG.md
+        run: |
+          git fetch --tags
+
+          # Find the last version tag (ignore 'latest')
+          LAST_TAG=$(git tag --sort=-version:refname | grep -v "^latest$" | head -1)
+
+          if [[ -z "$LAST_TAG" ]]; then
+            GIT_LOG=$(git log --pretty=format:"- %s (%an)" HEAD)
+          else
+            GIT_LOG=$(git log --pretty=format:"- %s (%an)" "${LAST_TAG}..HEAD")
+          fi
+
+          # Strip out automated bot commits
+          GIT_LOG=$(echo "$GIT_LOG" | grep -v "github-actions" || true)
+
+          DATE=$(date -u +"%Y-%m-%d")
+
+          ENTRY="## [${{ steps.version.outputs.version }}] - ${DATE}\n\n${GIT_LOG}\n\n---\n\n"
+
+          if [[ -f CHANGELOG.md ]]; then
+            echo -e "${ENTRY}$(cat CHANGELOG.md)" > CHANGELOG.md
+          else
+            echo -e "# Changelog\n\n${ENTRY}" > CHANGELOG.md
+          fi
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for ${{ steps.version.outputs.version }}" || echo "No changes"
+          git push
 
       - name: Read latest CHANGELOG entry
         id: changelog
