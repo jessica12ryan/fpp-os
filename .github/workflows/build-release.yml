@@ -175,7 +175,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add CHANGELOG.md
           git commit -m "Update CHANGELOG.md for ${{ steps.version.outputs.version }}" || echo "No changes"
-          git push
+          git push origin ${{ steps.version.outputs.version }}
 
       - name: Read latest CHANGELOG entry
         id: changelog
