@@ -121,6 +121,13 @@ jobs:
           git add VERSION.txt
           git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
           git push origin ${{ steps.version.outputs.version }}
+          # ↓ sync to master
+          git checkout master
+          git pull origin master
+          git checkout ${{ steps.version.outputs.version }} -- VERSION.txt
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes"
+          git push origin master
+          git checkout ${{ steps.version.outputs.version }}
 
       - name: Generate checksums
         run: |
@@ -128,12 +135,6 @@ jobs:
           md5sum    "$ISO_FILE" > "${ISO_FILE}.md5"
           cat "${ISO_FILE}.sha256"
           cat "${ISO_FILE}.md5"
-
-      - name: Determine release tag
-        id: tag
-        run: |
-          TAG="${{ steps.version.outputs.version }}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Update CHANGELOG.md
         run: |
@@ -191,7 +192,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
           body: |
             ## FPP-OS Install ISO
