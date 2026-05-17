@@ -61,7 +61,8 @@ This guide covers installation on:
 - [Physical PC (bare metal)](#1-installation-on-a-physical-pc-bare-metal)
 - [Proxmox VE (VM)](#2-installation-on-proxmox-ve-vm)
 - [VirtualBox](#3-installation-on-virtualbox)
-- [VMware](#4-installation-on-vmware-workstation---player)
+- [VMware Workstation or Player](#4-installation-on-vmware-workstation--player)
+- [VMware Fusion](#5-installation-on-vmware-fusion)
 
 ----
 
@@ -134,8 +135,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
    - Base Memory: Minimum 2048MB (recommended 4096MB)
    - Enable EFI: Check
 4. Hard Disk:
-   - Size: 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
-   - Type: VDI (VirtualBox Disk Image
+   - Type: VDI (VirtualBox Disk Image)
    - Size: 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
 5. Click Finish (Do not start VM yet)
 6. Go to VM Settings > Network
@@ -170,7 +170,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
    - CPU: 2 cores minimum
    - RAM: 2GB–4GB recommended
 6. Create virtual disk:
-   - 10GB+ recommended
+   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
    - Split or single file (either is fine)
 7. Start VM
 8. Follow installer prompts
@@ -178,6 +178,35 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 10. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 11. System will reboot when completed
 12. See [Post-Installation](#post-installation) for next steps
+
+
+---
+
+### 5. Installation on VMware Fusion
+
+#### Requirements
+- VMware Fusion
+- ISO file
+
+#### Steps
+
+1. Open VMware Fusion
+2. Select File > New (If not prompted to create a VM)
+3. Drag the downloaded ISO on to the VMware window and click Continue
+5. Select UEFI (If applicable) and click Continue
+6. Click Customise Settings
+7. Give the VM a Name and click Save
+8. Select Network Adapter
+9. Click the dot next to Autodetect under Bridged Networking
+10. Click Show All on the title bar
+11. Click Hard Drive - Resize to what you need (Recommended atleast 32GB, 64GB for larger shows)
+13. Close the Settings Panel
+14. Start VM
+15. Follow installer prompts
+16. Installation of OS and warns to remove install media and the system shuts down
+17. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+18. System will reboot when completed
+19. See [Post-Installation](#post-installation) for next steps
 
 
 ---
