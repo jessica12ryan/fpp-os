@@ -49,7 +49,7 @@ jobs:
             mtools \
             dosfstools
 
-      - name: Read and bump version to ${{ steps.version.outputs.version }}
+      - name: Read and bump version
         id: version
         run: |
           VERSION_FILE="VERSION.txt"
@@ -87,6 +87,8 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
+          echo "${VERSION} is being pushed to preseed template"
+          echo "This must match the version being pushed or the OS will have a mismatch"
           envsubst '${VERSION}' < preseed/fpp.template.preseed > preseed/fpp.preseed
 
       - name: Build FPP-OS ISO
@@ -113,14 +115,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add VERSION.txt
           git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push origin ${{ steps.version.outputs.version }}
-          # ↓ sync to master
-          git checkout master
-          git pull origin master
-          git checkout ${{ steps.version.outputs.version }} -- VERSION.txt
-          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes"
           git push origin master
-          git checkout ${{ steps.version.outputs.version }}
 
       - name: Generate checksums
         run: |
