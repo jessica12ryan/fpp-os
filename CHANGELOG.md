@@ -1,3 +1,9 @@
+## [0.0.46] - 2026-05-17
+
+- Reorder commit step for VERSION.txt in workflow (jessica12ryan)
+
+---
+
 ## [0.0.42] - 2026-05-17
 
 - Enhance build-release workflow and changelog extraction (jessica12ryan)
