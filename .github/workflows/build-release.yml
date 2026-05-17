@@ -49,7 +49,7 @@ jobs:
             mtools \
             dosfstools
 
-      - name: Read and bump version
+      - name: Read and bump version to ${{ steps.version.outputs.version }}
         id: version
         run: |
           VERSION_FILE="VERSION.txt"
@@ -83,13 +83,6 @@ jobs:
           git commit -m "Update FPP_Install.sh from upstream" || echo "No changes"
           git push
 
-      - name: Create branch
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git checkout -B "${{ steps.version.outputs.version }}"
-          git push origin "${{ steps.version.outputs.version }}" --force
-
       - name: Generate preseed
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -113,7 +106,7 @@ jobs:
           ls -lh "$ISO"
           file "$ISO"
 
-      - name: Commit updated VERSION.txt   # ← moved to after verify
+      - name: Commit ${{ steps.version.outputs.version }} to VERSION.txt
         run: |
           echo "${{ steps.version.outputs.version }}" > VERSION.txt
           git config user.name "github-actions"
@@ -136,7 +129,7 @@ jobs:
           cat "${ISO_FILE}.sha256"
           cat "${ISO_FILE}.md5"
 
-      - name: Update CHANGELOG.md
+      - name: Update CHANGELOG.md to ${{ steps.version.outputs.version }}
         run: |
           git fetch --tags
 
@@ -189,7 +182,7 @@ jobs:
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
           
-      - name: Create GitHub Release
+      - name: Create GitHub Release for ${{ steps.version.outputs.version }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
@@ -220,7 +213,14 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
+      - name: Create ${{ steps.version.outputs.version }} branch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -B "${{ steps.version.outputs.version }}"
+          git push origin "${{ steps.version.outputs.version }}" --force
+
       - name: Update Latest Tag
         run: |
           git tag -f latest
