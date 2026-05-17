@@ -4,7 +4,7 @@
 
 This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine.
 
-**WARNING: All data will be wiped on local drive automatically once booted from the ISO**
+**WARNING: All data will be wiped on local drive during the OS installation**
 
 The current version of FPP-OS uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
 
@@ -82,11 +82,12 @@ This guide covers installation on:
 3. Insert USB into the target PC.
 4. Boot into BIOS/UEFI (usually `F2`, `DEL`, or `F12`).
 5. Select USB as boot device.
-6. Wait for installation.
-7. Installation of OS finishes and warns to remove install media and the system shuts down
-8. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-9. System will reboot when completed
-10. See [Post-Installation](#post-installation) for next steps
+6. Installation will start
+7. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+8. Installation of OS finishes and warns to remove install media and the system shuts down
+9. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+10. System will reboot when completed
+11. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -107,10 +108,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 ```
 4. Follow the prompts to create a VM
 5. Install will start in VM
-6. Installation of OS finishes and warns to remove install media and the system shuts down
-7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+6. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+7. Installation of OS finishes and warns to remove install media and the system shuts down
+8. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+9. System will reboot when completed
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -141,11 +143,12 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 6. Go to VM Settings > Network
 7. Change "Attached to: NAT" to "Attached to: Bridged Adapter"
 8. Click OK
-9. Start VM
-10. Installation of OS and warns to remove install media and the system shuts down
-11. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-12. System will reboot when completed
-13. See [Post-Installation](#post-installation) for next steps
+9. Start VM and installation will start
+10. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+11. Installation of OS and warns to remove install media and the system shuts down
+12. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+13. System will reboot when completed
+14. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -172,8 +175,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 6. Create virtual disk:
    - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
    - Split or single file (either is fine)
-7. Start VM
-8. Follow installer prompts
+7. Start VM and installation will start
+8. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
 9. Installation of OS and warns to remove install media and the system shuts down
 10. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 11. System will reboot when completed
@@ -201,8 +204,8 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 10. Click Show All on the title bar
 11. Click Hard Drive - Resize to what you need (Recommended atleast 32GB, 64GB for larger shows)
 13. Close the Settings Panel
-14. Start VM
-15. Follow installer prompts
+14. Start VM and installation will start
+15. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
 16. Installation of OS and warns to remove install media and the system shuts down
 17. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 18. System will reboot when completed
