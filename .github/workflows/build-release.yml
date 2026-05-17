@@ -27,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0   # ← full history + all tags
 
@@ -171,7 +171,7 @@ jobs:
           echo "EOF" >> "$GITHUB_OUTPUT"
           
       - name: Create GitHub Release for ${{ steps.version.outputs.version }}
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
@@ -215,7 +215,7 @@ jobs:
           git push origin latest --force
 
       - name: Upload ISO as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: fpp-os-iso
           path: |
