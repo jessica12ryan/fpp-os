@@ -47,13 +47,21 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 
 ---
 
+## Requirements
+
+ - The machine (or VM) you are installing on must be dedicated to FPP. There is a risk of drives being wiped if they are in the same machine or attached to the same VM. The script will attempt to use the first drive available.
+ - You must have a network adapter (NIC) and an available internet connection. If using ethernet or a VM, the network connection must be configured prior to installing the ISO. If you are using WI-FI, you will be prompted to enter your credentials during the ISO install. Your NIC must be compatible with Debian 13.
+ - In fact, your machine (or VM) must be compatible with Debian 13. Most systems are, even older machines. However, if there are components in your PC that do not have Debian 13 compatibility, there is nothing we can do to change that.
+
+---
+
 ## Installation Guide
 
 This guide covers installation on:
-- Physical PC (bare metal)
-- Proxmox VE (VM)
-- VirtualBox
-- VMware
+- [Physical PC (bare metal)](#1-installation-on-a-physical-pc-bare-metal)
+- [Proxmox VE (VM)](#2-installation-on-proxmox-ve-vm)
+- [VirtualBox](#3-installation-on-virtualbox)
+- [VMware](#4-installation-on-vmware-workstation---player)
 
 ----
 
@@ -77,6 +85,8 @@ This guide covers installation on:
 7. Installation of OS finishes and warns to remove install media and the system shuts down
 8. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 9. System will reboot when completed
+10. See [Post-Installation](#post-installation) for next steps
+
 
 ---
 
@@ -99,6 +109,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 6. Installation of OS finishes and warns to remove install media and the system shuts down
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -134,11 +145,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 10. Installation of OS and warns to remove install media and the system shuts down
 11. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 12. System will reboot when completed
+13. See [Post-Installation](#post-installation) for next steps
 
 
 ---
 
 ### 4. Installation on VMware (Workstation / Player)
+
+-- THIS SECTION REQUIRES REVIEW!
 
 #### Requirements
 - VMware Workstation or Player
@@ -163,6 +177,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 9. Installation of OS and warns to remove install media and the system shuts down
 10. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 11. System will reboot when completed
+12. See [Post-Installation](#post-installation) for next steps
 
 
 ---
