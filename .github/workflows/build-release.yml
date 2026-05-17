@@ -53,20 +53,13 @@ jobs:
         id: version
         run: |
           VERSION_FILE="VERSION.txt"
-
           CURRENT_VERSION=$(cat "$VERSION_FILE")
-          echo "Current version: $CURRENT_VERSION"
-
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
-          # If patch is empty → start patch series
           if [[ -z "$PATCH" ]]; then
             PATCH=0
           fi
 
-          # Decide increment logic:
-          # If patch exists → increment patch
-          # If no patch → create .1
           if [[ "$CURRENT_VERSION" == "$MAJOR.$MINOR" ]]; then
             NEW_VERSION="${MAJOR}.${MINOR}.1"
           else
@@ -76,19 +69,7 @@ jobs:
 
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
           echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-
           echo "New version: $NEW_VERSION"
-
-          # write it back to file
-          echo "$NEW_VERSION" > "$VERSION_FILE"
-          
-      - name: Commit updated VERSION.txt
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add VERSION.txt
-          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
-          git push
 
       - name: Download latest FPP install script
         run: |
@@ -131,6 +112,15 @@ jobs:
           echo "ISO_FILE=$ISO" >> "$GITHUB_ENV"
           ls -lh "$ISO"
           file "$ISO"
+
+      - name: Commit updated VERSION.txt   # ← moved to after verify
+        run: |
+          echo "${{ steps.version.outputs.version }}" > VERSION.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add VERSION.txt
+          git commit -m "Bump version to ${{ steps.version.outputs.version }}" || echo "No changes to commit"
+          git push origin ${{ steps.version.outputs.version }}
 
       - name: Generate checksums
         run: |
@@ -181,6 +171,13 @@ jobs:
           git add CHANGELOG.md
           git commit -m "Update CHANGELOG.md for ${{ steps.version.outputs.version }}" || echo "No changes"
           git push origin ${{ steps.version.outputs.version }}
+          # ↓ also keep master in sync
+          git checkout master
+          git pull origin master
+          git checkout ${{ steps.version.outputs.version }} -- CHANGELOG.md
+          git commit -m "Sync CHANGELOG.md to master for ${{ steps.version.outputs.version }}" || echo "No changes"
+          git push origin master
+          git checkout ${{ steps.version.outputs.version }}
 
       - name: Read latest CHANGELOG entry
         id: changelog
