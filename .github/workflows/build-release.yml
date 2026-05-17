@@ -161,6 +161,11 @@ jobs:
           # Strip out automated bot commits
           GIT_LOG=$(echo "$GIT_LOG" | grep -v "github-actions" || true)
 
+          # Fall back to a generic entry if log is empty (e.g. after a half-build)
+          if [[ -z "$GIT_LOG" ]]; then
+            GIT_LOG="- Build triggered manually or no new commits since last release"
+          fi
+
           DATE=$(date -u +"%Y-%m-%d")
 
           ENTRY="## [${{ steps.version.outputs.version }}] - ${DATE}\n\n${GIT_LOG}\n\n---\n\n"
