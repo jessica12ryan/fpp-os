@@ -207,7 +207,6 @@ sudo apt update && sudo apt install open-vm-tools -y
 
 #### Requirements
 - Parallels Desktop installed
-- ISO file
 
 #### Steps
 
