@@ -111,7 +111,7 @@ This guide covers installation on:
 2. Open your host shell
 3. Run the following command
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/proxmox/fpp-os.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-proxmox.sh)"
 ```
 4. Follow the prompts to create a VM
 5. Install will start in VM
@@ -132,31 +132,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 
 #### Steps
 
-1. Open VirtualBox → Click **New**
-2. Name and Operating System:
-   - Name: your choice
-   - ISO Image: Select FPP-OS ISO
-   - Type: Linux
-   - Subtype: Debian
-   - Version: Debian (64-bit)
-   - Skip Unattended Install: Check
-3. Hardware:
-   - Base Memory: Specify how much RAM you want to assign to the VM
-   - Enable EFI: Check
-4. Hard Disk:
-   - Type: VDI (VirtualBox Disk Image)
-   - Size: Specify how much disk space you want to assign to the VM
-5. Click Finish (Do not start VM yet)
-6. Go to VM Settings > Network
-7. Change "Attached to: NAT" to "Attached to: Bridged Adapter"
-8. (Optional) Select General on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
-9. Click OK
-10. Start VM and installation will start
-11. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-12. Installation of OS and warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
-13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-14. System will reboot when completed
-15. See [Post-Installation](#post-installation) for next steps
+1. Open macOS Terminal, Linux Terminal, or Windows PowerShell
+2. Run the following command
+```
+python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/proxmox/fpp-os-vbox.py').read())"
+```
+3. Follow the prompts to create a VM
+4. Install will start in VM
+5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
+6. Installation of OS and warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---
