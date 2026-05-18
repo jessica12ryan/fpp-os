@@ -7,13 +7,14 @@ set -e
 printf "Enter VM Name: "
 read -r VM_NAME
 
-printf "Enter RAM size in MB (e.g., 2048, 4096): "
-read -r RAM_SIZE
+printf "Enter RAM size in GB (e.g., 1, 2, 4): "
+read -r RAM_SIZE_GB
 
 printf "Enter Disk size in GB (e.g., 16, 32, 64): "
 read -r DISK_SIZE_GB
 
 # Convert GB to MB for Parallels CLI
+RAM_SIZE=$(( RAM_SIZE_GB * 1024 ))
 DISK_SIZE_MB=$(( DISK_SIZE_GB * 1024 ))
 
 # Downloads the ISO to your Downloads folder using the original filename

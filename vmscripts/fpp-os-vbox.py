@@ -70,13 +70,14 @@ def main():
     vm_name = input("Enter VM Name [FPP]: ") or "FPP"
     
     try:
-        ram_mb = input("Enter RAM in MB (e.g., 2048): ")
+        ram_gb = input("Enter RAM in GB (e.g., 1, 2, 4): ")
         disk_gb = int(input("Enter Disk size in GB (e.g., 16, 32, 64): "))
     except ValueError:
         print("Invalid number entered. Exiting.")
         sys.exit(1)
 
-    # Convert Disk GB to MB
+    # Convert GB to MB
+    ram_mb = str(ram_gb * 1024)
     disk_size_mb = str(disk_gb * 1024)
 
     # Static Configurations

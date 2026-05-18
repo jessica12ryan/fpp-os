@@ -152,27 +152,21 @@ python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.gith
 
 #### Requirements
 - VMware Workstation or Player installed
-- ISO file
 
 #### Steps
 
-1. Open VMware → Create New Virtual Machine
-2. Choose Typical, then click Next
-3. Choose ISO option, then browse and select the ISO file, then click Next
-4. Name your VM and choose location
-5. Create virtual disk:
-   - Specify how much disk space you want to assign to the VM
-   - Split or single file (either is fine)
-   - Click Next
-6. Click "Customize Hardware", select Network Adapter on the left, then select Bridged
-7. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
-8. Click Close and then finish
-9. Start VM and installation will start
-10. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-11. Installation of OS and warns to remove install media and the system shuts down
-12. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-13. System will reboot when completed
-14. See [Post-Installation](#post-installation) for next steps
+1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
+2. Run the following command
+```
+iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vmwarewks.ps1" -UseBasicParsing).Content
+```
+3. Follow the prompts to create a VM
+4. Install will start in VM
+5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
+6. Installation of OS and warns to remove install media and the system shuts down (VMware usually does this automatically)
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -192,7 +186,7 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 3. Follow the prompts to create a VM
 4. Install will start in VM
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-6. Installation of OS and warns to remove install media and the system shuts down (VMware Fusion usually does this automatically)
+6. Installation of OS and warns to remove install media and the system shuts down (VMware usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
 9. After reboot, login as root with password falcon, and run the following command
@@ -234,7 +228,7 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 
 #### Steps
 
-1. Open PowerShell
+1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
 2. Run the following command
 ```
 iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-hyperv.ps1" -UseBasicParsing).Content
@@ -242,7 +236,7 @@ iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp
 3. Follow the prompts to create a VM
 4. Install will start in VM
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-6. Installation of OS and warns to remove install media and the system shuts down
+6. Installation of OS and warns to remove install media and the system shuts down (Hyper-V usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
 9. See [Post-Installation](#post-installation) for next steps

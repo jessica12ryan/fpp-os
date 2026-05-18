@@ -4,9 +4,15 @@ set -e
 
 read -p "Enter VM ID (e.g., 105): " VMID
 read -p "Enter VM Name: " VMNAME
-read -p "Enter Memory in MB (e.g., 2048): " MEMORY
+read -p "Enter Memory in GB (e.g., 1, 2, 4): " MEM_GB
+read -p "Enter Disk Size in GB (e.g., 16, 32, 64): " DISK_SIZE
 read -p "Enter Storage Pool (e.g., local-lvm): " STORAGE
-read -p "Enter Disk Size in GB (e.g., 32): " DISK_SIZE
+
+# Strip out "GB" or "gb" if the user accidentally typed it
+MEM_GB=$(echo "$MEM_GB" | sed -E 's/[Gg][Bb]//g' | tr -d ' ')
+
+# Convert to MB (GB * 1024)
+MEMORY=$((MEM_GB * 1024))
 
 ISO_URL="https://github.com/jessica12ryan/fpp-os/releases/latest/download/fpp-os-amd64.iso"
 ISO_NAME=$(basename "$ISO_URL")

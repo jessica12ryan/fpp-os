@@ -4,8 +4,22 @@ VMRUN="/Applications/VMware Fusion.app/Contents/Library/vmrun"
 
 # Prompt user for VM inputs
 read -p "Enter VM Name (no spaces): " VM_NAME
-read -p "Enter RAM size in MB (e.g., 2048, 4096): " VM_RAM
-read -p "Enter HDD size (e.g., 20GB, 40GB): " VM_HDD
+
+# Prompt for RAM in GB and convert it to MB (RAM * 1024)
+read -p "Enter RAM size in GB (e.g., 1, 2, 4): " RAM_GB
+VM_RAM=$((RAM_GB * 1024))
+
+# Prompt for Disk size (appends 'GB' automatically if the user omits it)
+read -p "Enter Disk size in GB (e.g., 16, 32, 64): " HDD_INPUT
+if [[ ! $HDD_INPUT =~ [Gg][Bb]$ ]]; then
+    VM_HDD="${HDD_INPUT}GB"
+else
+    VM_HDD=$HDD_INPUT
+fi
+
+# --- 2. Verification Outputs (Optional) ---
+echo "Configured RAM: ${VM_RAM}MB"
+echo "Configured HDD: ${VM_HDD}"
 
 ISO_URL="https://github.com/jessica12ryan/fpp-os/releases/latest/download/"
 ISO_FILE="fpp-os-amd64.iso"

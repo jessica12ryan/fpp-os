@@ -6,15 +6,23 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 
 # --- 1. User Prompts ---
 $VMName    = Read-Host -Prompt "Enter Virtual Machine Name"
-$RAMInput  = Read-Host -Prompt "Enter RAM size (e.g., 4GB, 8GB)"
-$DiskInput = Read-Host -Prompt "Enter Disk size (e.g., 40GB, 100GB)"
-$ISOInput  = Read-Host -Prompt "Enter ISO Path (Local path or HTTP URL)"
+$RAMInput  = Read-Host -Prompt "Enter RAM size in GB (e.g., 1, 2, 4)"
+$DiskInput = Read-Host -Prompt "Enter Disk size in GB (e.g., 16, 32, 64)"
+
+# Clean RAM input and ensure it cleanly ends with "GB" (e.g., 4 becomes 4GB)
+$CleanRAM  = $RAMInput.ToString().Trim().Replace('GB','').Replace('gb','')
+$RAMInMB   = "${CleanRAM}GB"
+
+# Clean Disk input and ensure it cleanly ends with "GB" (e.g., 32 becomes 32GB)
+$CleanDisk = $DiskInput.ToString().Trim().Replace('GB','').Replace('gb','')
+$DiskSize  = "${CleanDisk}GB"
 
 # Convert string inputs to proper bytes for Hyper-V cmdlets
 $RAM      = [long](Invoke-Expression $RAMInput)
 $VHDSize  = [long](Invoke-Expression $DiskInput)
 
 # Base Paths
+$ISOInput  = "https://github.com/jessica12ryan/fpp-os/releases/latest/download/fpp-os-amd64.iso"
 $VMLocation = "C:\Hyper-V"
 $VHDPath    = "$VMLocation\$VMName\$VMName.vhdx"
 $LocalISOFolder = "$VMLocation\ISOs"
@@ -25,12 +33,19 @@ if ($ISOInput -like "http://*" -or $ISOInput -like "https://*") {
     if (-not (Test-Path $LocalISOFolder)) { New-Item -ItemType Directory -Path $LocalISOFolder | Out-Null }
     
     $FileName = [System.IO.Path]::GetFileName([System.Uri]$ISOInput).Split('?')[0]
-    if (-not $FileName) { $FileName = "downloaded_media.iso" }
+    if (-not $FileName) { $FileName = "fpp-os-hyperv.iso" }
     
     $FinalISOPath = Join-Path $LocalISOFolder $FileName
     
-    Write-Host "Downloading ISO from web link to local storage..." -ForegroundColor Cyan
-    Invoke-WebRequest -Uri $ISOInput -OutFile $FinalISOPath -UserAgent "Mozilla/5.0"
+    # Check if the file already exists; if so, delete it to force an overwrite
+    if (Test-Path $FinalISOPath) {
+        Write-Host "Existing ISO found. Deleting it to force a fresh download..." -ForegroundColor Yellow
+        Remove-Item -Path $FinalISOPath -Force -ErrorAction SilentlyContinue
+    }
+    
+    Write-Host "Downloading FPP ISO from latest release..." -ForegroundColor Cyan
+    Import-Module BitsTransfer
+    Start-BitsTransfer -Source $ISOInput -Destination $FinalISOPath
     Write-Host "Download complete: $FinalISOPath" -ForegroundColor Green
 }
 
@@ -67,6 +82,19 @@ New-VM -Name $VMName `
 
 # Adjust CPU count (Default to 2)
 Set-VM -Name $VMName -ProcessorCount 2
+
+# --- 4.5. Custom VM Configurations ---
+Write-Host "Applying custom configurations (Guest Services, Checkpoints, Stop Action, Secure Boot)..." -ForegroundColor Cyan
+
+# Enable Guest Services (Integration Services)
+Enable-VMIntegrationService -VMName $VMName -Name "Guest Service Interface"
+
+# Disable Checkpoints, set Automatic Stop Action to ShutDown
+Set-VM -Name $VMName -CheckpointType Disabled -AutomaticStopAction ShutDown
+
+# Set Secure Boot Template to Microsoft UEFI Certificate Authority
+Set-VMFirmware -VMName $VMName -SecureBootTemplate "MicrosoftUEFICertificateAuthority"
+
 
 # --- 5. Attach ISO and Set Boot Priority ---
 if (Test-Path $FinalISOPath) {
