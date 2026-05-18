@@ -240,7 +240,7 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-hyperv.ps1" -UseBasicParsing).Content
 ```
 3. Follow the prompts to create a VM
-4. Install will start in VM. Open Parallels Desktop to continue
+4. Install will start in VM
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 6. Installation of OS and warns to remove install media and the system shuts down
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
