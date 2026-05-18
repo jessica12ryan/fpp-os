@@ -1,3 +1,11 @@
+## [0.0.50] - 2026-05-18
+
+- Add VirtualBox install script and cleaned up Proxmox script (jessica12ryan)
+- Add files via upload (jessica12ryan)
+- Revise README for installation and requirements details (jessica12ryan)
+
+---
+
 ## [0.0.49] - 2026-05-18
 
 - Update preseed template to include pre-install script (jessica12ryan)
