@@ -71,6 +71,7 @@ This guide covers installation on:
 - [VMware Workstation or Player](#4-installation-on-vmware-workstation--player)
 - [VMware Fusion](#5-installation-on-vmware-fusion)
 - [Parallels Desktop](#6-installation-on-parallels)
+- [Hyper-V](#7-installation-on-hyper-v--still-requires-testing-)
 
 ----
 
@@ -219,6 +220,29 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 4. Install will start in VM. Open Parallels Desktop to continue
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 6. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
+
+
+---
+
+### 7. Installation on Hyper-V ( STILL REQUIRES TESTING )
+
+#### Requirements
+- Windows with Hyper-V installed
+
+#### Steps
+
+1. Open PowerShell
+2. Run the following command
+```
+iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-hyperv.ps1" -UseBasicParsing).Content
+```
+3. Follow the prompts to create a VM
+4. Install will start in VM. Open Parallels Desktop to continue
+5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
+6. Installation of OS and warns to remove install media and the system shuts down
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
 9. See [Post-Installation](#post-installation) for next steps
