@@ -15,6 +15,9 @@ on:
         description: 'Release tag (e.g. v1.0.0). Leave blank to auto-generate.'
         required: false
         default: ''
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
         
 jobs:
   build-iso:
