@@ -128,14 +128,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 
 #### Requirements
 - Oracle VirtualBox installed
-- ISO file
 
 #### Steps
 
 1. Open macOS Terminal, Linux Terminal, or Windows PowerShell
 2. Run the following command
 ```
-python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/proxmox/fpp-os-vbox.py').read())"
+python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vbox.py').read())"
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
