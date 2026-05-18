@@ -1,3 +1,15 @@
+## [0.0.53] - 2026-05-18
+
+- Add script for VMware Wks, fix Hyper-V, and made install scripts more consistent (jessica12ryan)
+- Force workflow to use Node 24 (jessica12ryan)
+- Fix file extension (jessica12ryan)
+- Update VM installation instructions in README (jessica12ryan)
+- Add Hyper-V installation section to README (jessica12ryan)
+- Placeholder for Hyper-V script (very beta) (jessica12ryan)
+- Update parallels to bridged networking (jessica12ryan)
+
+---
+
 ## [0.0.52] - 2026-05-18
 
 - Update installation requirements in README (jessica12ryan)
