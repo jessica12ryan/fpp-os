@@ -1,3 +1,10 @@
+## [0.0.51] - 2026-05-18
+
+- Add install script for VMware Fusion (jessica12ryan)
+- Fix URL for fpp-os-vbox.py in README (jessica12ryan)
+
+---
+
 ## [0.0.50] - 2026-05-18
 
 - Add VirtualBox install script and cleaned up Proxmox script (jessica12ryan)
