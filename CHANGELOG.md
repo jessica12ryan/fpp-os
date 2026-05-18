@@ -1,3 +1,17 @@
+## [0.0.49] - 2026-05-18
+
+- Update preseed template to include pre-install script (jessica12ryan)
+- Add pre-install message and delay for FPP setup (jessica12ryan)
+- Update README.md - Enhance installation guide with Parallels and VMware updates (jessica12ryan)
+- Update README.md - Clarify OS installation warning when confirming partitioning (jessica12ryan)
+- Update preseed - User should confirm that disk data will be overwritten (jessica12ryan)
+- Update README.md to include install instructions for VMware Fusion (jessica12ryan)
+- Update README.md with requirements for FPP installation (jessica12ryan)
+- Update Workflow - Node 20 runners bumped to Node 24 runners (jessica12ryan)
+- Update CHANGELOG.md (jessica12ryan)
+
+---
+
 ## [0.0.48] - 2026-05-17
 
 - Downgrade version from 0.0.48 to 0.0.47 (jessica12ryan)
