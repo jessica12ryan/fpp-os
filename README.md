@@ -27,6 +27,10 @@ Grab the latest ISO from the [**Releases**](../../releases/latest) page.
 ### Flash to USB
 
 **Linux / macOS:**
+Use [Etcher](https://etcher.balena.io). Select the ISO, choose your USB drive, and write.
+
+OR
+
 ```bash
 dd if=fpp-os-amd64.iso of=/dev/sdX bs=4M status=progress
 sync
@@ -47,11 +51,14 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 
 ---
 
-## Requirements
+## Global Requirements
 
- - The machine (or VM) you are installing on must be dedicated to FPP. There is a risk of drives being wiped if they are in the same machine or attached to the same VM. The script will attempt to use the first drive available.
- - You must have a network adapter (NIC) and an available internet connection. If using ethernet or a VM, the network connection must be configured prior to installing the ISO. If you are using WI-FI, you will be prompted to enter your credentials during the ISO install. Your NIC must be compatible with Debian 13.
- - In fact, your machine (or VM) must be compatible with Debian 13. Most systems are, even older machines. However, if there are components in your PC that do not have Debian 13 compatibility, there is nothing we can do to change that.
+ - CPU: Must be 64-Bit
+ - Memory (RAM): Atleast 512MB (Recommended 2GB-4GB) depending on size of show
+ - Disk Size: Atleast 4GB (Recommended 16-64GB) depending on size of show
+ - Network: Must have an internet connection
+ - Physical machine or VM instance must be dedicated to FPP
+ - Hardware must be compatible with Debian 13
 
 ---
 
@@ -72,13 +79,13 @@ This guide covers installation on:
 #### Requirements
 - USB drive (4GB+)
 - ISO image
-- Tool like Rufus or Balena Etcher
+- A computer with [Rufus](https://rufus.ie) or Balena [Balena Etcher](https://etcher.balena.io) installed
 
 #### Steps
 
 1. Download the latest ISO file.
 2. Create a bootable USB:
-   - Windows: Use Rufus
+   - Windows: Use Rufus or Balena Etcher
    - macOS/Linux: Use Balena Etcher or `dd`
 3. Insert USB into the target PC.
 4. Boot into BIOS/UEFI (usually `F2`, `DEL`, or `F12`).
@@ -108,7 +115,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 ```
 4. Follow the prompts to create a VM
 5. Install will start in VM
-6. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+6. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 7. Installation of OS finishes and warns to remove install media and the system shuts down
 8. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 9. System will reboot when completed
@@ -134,18 +141,18 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
    - Version: Debian (64-bit)
    - Skip Unattended Install: Check
 3. Hardware:
-   - Base Memory: Minimum 2048MB (recommended 4096MB)
+   - Base Memory: Specify how much RAM you want to assign to the VM
    - Enable EFI: Check
 4. Hard Disk:
    - Type: VDI (VirtualBox Disk Image)
-   - Size: 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
+   - Size: Specify how much disk space you want to assign to the VM
 5. Click Finish (Do not start VM yet)
 6. Go to VM Settings > Network
 7. Change "Attached to: NAT" to "Attached to: Bridged Adapter"
 8. (Optional) Select General on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
 9. Click OK
 10. Start VM and installation will start
-11. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+11. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 12. Installation of OS and warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
 13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 14. System will reboot when completed
@@ -167,14 +174,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 3. Choose ISO option, then browse and select the ISO file, then click Next
 4. Name your VM and choose location
 5. Create virtual disk:
-   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
+   - Specify how much disk space you want to assign to the VM
    - Split or single file (either is fine)
    - Click Next
 6. Click "Customize Hardware", select Network Adapter on the left, then select Bridged
 7. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
 8. Click Close and then finish
 9. Start VM and installation will start
-10. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+10. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 11. Installation of OS and warns to remove install media and the system shuts down
 12. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 13. System will reboot when completed
@@ -200,11 +207,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 8. Select Network Adapter
 9. Click the dot next to Autodetect under Bridged Networking
 10. Click Show All on the title bar
-11. Click Hard Drive - Resize to what you need (Recommended atleast 32GB, 64GB for larger shows)
+11. Click Hard Drive - Resize to what you need
 12. (Optional) Click Show All on the title bar, click Processors and Memory, then specify how much RAM you want to assign to the VM. This can be changed at any time
 13. Close the Settings Panel
 14. Start VM and installation will start
-15. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+15. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 16. Installation of OS and warns to remove install media and the system shuts down
 17. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 18. System will reboot when completed
@@ -227,14 +234,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 4. Select the Hardware tab, select Network on the left, then select Default Adapter under Bridged Network
 5. Select Hard Disk on the left, click Advanced, then click Properties
 6. Specify your disk size:
-   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
    - If you made changes: Click Apply → Continue
    - Click Close → OK
 7. Select Boot Order on the left, click advanced, and change BIOS to EFI (64 Bit) if available
 8. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
 9. Close the window and click Continue
 10. The VM will start automatically and installation will begin
-11. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+11. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
 12. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
 13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 14. System will reboot when completed
