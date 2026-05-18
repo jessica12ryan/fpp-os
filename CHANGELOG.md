@@ -1,3 +1,11 @@
+## [0.0.52] - 2026-05-18
+
+- Update installation requirements in README (jessica12ryan)
+- Add script for Parallels installation (jessica12ryan)
+- More updates for VMware Fusion (jessica12ryan)
+
+---
+
 ## [0.0.51] - 2026-05-18
 
 - Add install script for VMware Fusion (jessica12ryan)
