@@ -180,28 +180,22 @@ python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.gith
 
 #### Requirements
 - VMware Fusion installed
-- ISO file
 
 #### Steps
 
-1. Open VMware Fusion
-2. Select File > New (If not prompted to create a VM)
-3. Drag the downloaded ISO on to the VMware window and click Continue
-5. Select UEFI (If applicable) and click Continue
-6. Click Customise Settings
-7. Give the VM a Name and click Save
-8. Select Network Adapter
-9. Click the dot next to Autodetect under Bridged Networking
-10. Click Show All on the title bar
-11. Click Hard Drive - Resize to what you need
-12. (Optional) Click Show All on the title bar, click Processors and Memory, then specify how much RAM you want to assign to the VM. This can be changed at any time
-13. Close the Settings Panel
-14. Start VM and installation will start
-15. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-16. Installation of OS and warns to remove install media and the system shuts down
-17. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-18. System will reboot when completed
-19. See [Post-Installation](#post-installation) for next steps
+1. Open macOS Terminal
+2. Run the following command
+```
+curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vmfusion.sh | bash
+```
+3. Follow the prompts to create a VM
+4. Install will start in VM
+5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
+6. Bug - If you get a warning about apt configuration, hit enter to continue. Install will continue.
+6. Installation of OS and warns to remove install media and the system shuts down (VMware Fusion usually does this automatically)
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---
