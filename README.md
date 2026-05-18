@@ -211,23 +211,18 @@ sudo apt update && sudo apt install open-vm-tools -y
 
 #### Steps
 
-1. Open Parallels → Install Windows, Linux, or macOS from an image file → Continue
-2. Locate and select the ISO file, then click Continue
-3. Name your VM, choose location, select "customize settings before installation", then click Create
-4. Select the Hardware tab, select Network on the left, then select Default Adapter under Bridged Network
-5. Select Hard Disk on the left, click Advanced, then click Properties
-6. Specify your disk size:
-   - If you made changes: Click Apply → Continue
-   - Click Close → OK
-7. Select Boot Order on the left, click advanced, and change BIOS to EFI (64 Bit) if available
-8. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
-9. Close the window and click Continue
-10. The VM will start automatically and installation will begin
-11. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-12. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
-13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-14. System will reboot when completed
-15. See [Post-Installation](#post-installation) for next steps
+1. Open macOS Terminal
+2. Run the following command
+```
+curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-parallels.sh | bash
+```
+3. Follow the prompts to create a VM
+4. Install will start in VM. Open Parallels Desktop to continue
+5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
+6. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---
