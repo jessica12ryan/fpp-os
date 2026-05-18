@@ -73,8 +73,11 @@ d-i grub-installer/bootdev string default
 # This runs after the base system is installed and before reboot
 # Uses printf to correctly write newlines into the systemd unit file
 d-i preseed/late_command string \
-    in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Install.sh -o /root/FPP_Install.sh && chmod 700 /root/FPP_Install.sh'; \
+    in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Pre_Install.sh -o /root/FPP_Pre_Install.sh && chmod 700 /root/FPP_Pre_Install.sh'; \
+    in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Install.sh -o /root/Install.sh && chmod 700 /root/Install.sh'; \
     in-target bash -c 'curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/refs/heads/${VERSION}/SD/FPP_Post_Install.sh -o /root/FPP_Post_Install.sh && chmod 700 /root/FPP_Post_Install.sh'; \
+    in-target bash -c 'cat /root/FPP_Pre_Install.sh >> /root/FPP_Install.sh && echo "" >> /root/FPP_Install.sh && rm /root/FPP_Pre_Install.sh'; \
+    in-target bash -c 'echo "" >> /root/FPP_Install.sh && cat /root/Install.sh >> /root/FPP_Install.sh && rm /root/Install.sh'; \
     in-target bash -c 'echo "" >> /root/FPP_Install.sh && cat /root/FPP_Post_Install.sh >> /root/FPP_Install.sh && chmod 700 /root/FPP_Install.sh && rm /root/FPP_Post_Install.sh'; \
     in-target sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub; \
     in-target sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub; \
