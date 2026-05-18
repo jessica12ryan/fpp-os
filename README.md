@@ -63,6 +63,7 @@ This guide covers installation on:
 - [VirtualBox](#3-installation-on-virtualbox)
 - [VMware Workstation or Player](#4-installation-on-vmware-workstation--player)
 - [VMware Fusion](#5-installation-on-vmware-fusion)
+- [Parallels Desktop](#6-installation-on-parallels)
 
 ----
 
@@ -96,7 +97,6 @@ This guide covers installation on:
 
 #### Requirements
 - Proxmox VE installed
-- ISO uploaded to Proxmox storage
 
 #### Steps
 
@@ -142,7 +142,37 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 5. Click Finish (Do not start VM yet)
 6. Go to VM Settings > Network
 7. Change "Attached to: NAT" to "Attached to: Bridged Adapter"
-8. Click OK
+8. (Optional) Select General on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
+9. Click OK
+10. Start VM and installation will start
+11. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+12. Installation of OS and warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
+13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+14. System will reboot when completed
+15. See [Post-Installation](#post-installation) for next steps
+
+
+---
+
+### 4. Installation on VMware (Workstation / Player)
+
+#### Requirements
+- VMware Workstation or Player installed
+- ISO file
+
+#### Steps
+
+1. Open VMware → Create New Virtual Machine
+2. Choose Typical, then click Next
+3. Choose ISO option, then browse and select the ISO file, then click Next
+4. Name your VM and choose location
+5. Create virtual disk:
+   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
+   - Split or single file (either is fine)
+   - Click Next
+6. Click "Customize Hardware", select Network Adapter on the left, then select Bridged
+7. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
+8. Click Close and then finish
 9. Start VM and installation will start
 10. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
 11. Installation of OS and warns to remove install media and the system shuts down
@@ -153,42 +183,10 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 
 ---
 
-### 4. Installation on VMware (Workstation / Player)
-
--- THIS SECTION REQUIRES REVIEW!
-
-#### Requirements
-- VMware Workstation or Player
-- ISO file
-
-#### Steps
-
-1. Open VMware → Create New Virtual Machine
-2. Choose:
-   - Installer disc image (ISO)
-3. Select OS type:
-   - Linux → Debian 64-bit (or Other Linux)
-4. Name your VM and choose location
-5. Allocate resources:
-   - CPU: 2 cores minimum
-   - RAM: 2GB–4GB recommended
-6. Create virtual disk:
-   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
-   - Split or single file (either is fine)
-7. Start VM and installation will start
-8. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
-9. Installation of OS and warns to remove install media and the system shuts down
-10. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-11. System will reboot when completed
-12. See [Post-Installation](#post-installation) for next steps
-
-
----
-
 ### 5. Installation on VMware Fusion
 
 #### Requirements
-- VMware Fusion
+- VMware Fusion installed
 - ISO file
 
 #### Steps
@@ -203,6 +201,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 9. Click the dot next to Autodetect under Bridged Networking
 10. Click Show All on the title bar
 11. Click Hard Drive - Resize to what you need (Recommended atleast 32GB, 64GB for larger shows)
+12. (Optional) Click Show All on the title bar, click Processors and Memory, then specify how much RAM you want to assign to the VM. This can be changed at any time
 13. Close the Settings Panel
 14. Start VM and installation will start
 15. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
@@ -210,6 +209,36 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 17. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 18. System will reboot when completed
 19. See [Post-Installation](#post-installation) for next steps
+
+
+---
+
+### 6. Installation on Parallels
+
+#### Requirements
+- Parallels Desktop installed
+- ISO file
+
+#### Steps
+
+1. Open Parallels → Install Windows, Linux, or macOS from an image file → Continue
+2. Locate and select the ISO file, then click Continue
+3. Name your VM, choose location, select "customize settings before installation", then click Create
+4. Select the Hardware tab, select Network on the left, then select Default Adapter under Bridged Network
+5. Select Hard Disk on the left, click Advanced, then click Properties
+6. Specify your disk size:
+   - 10GB+ (Recommended atleast 32GB, 64GB for larger shows)
+   - If you made changes: Click Apply → Continue
+   - Click Close → OK
+7. Select Boot Order on the left, click advanced, and change BIOS to EFI (64 Bit) if available
+8. (Optional) Select Memory on the left, then specify how much RAM you want to assign to the VM. This can be changed at any time
+9. Close the window and click Continue
+10. The VM will start automatically and installation will begin
+11. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+12. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
+13. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+14. System will reboot when completed
+15. See [Post-Installation](#post-installation) for next steps
 
 
 ---
