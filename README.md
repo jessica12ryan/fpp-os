@@ -191,11 +191,14 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 3. Follow the prompts to create a VM
 4. Install will start in VM
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-6. Bug - If you get a warning about apt configuration, hit enter to continue. Install will continue.
 6. Installation of OS and warns to remove install media and the system shuts down (VMware Fusion usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+9. After reboot, login as root with password falcon, and run the following command
+```
+sudo apt update && sudo apt install open-vm-tools -y
+```
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---

@@ -20,42 +20,6 @@ echo "Downloading ISO..."
 curl -L --progress-bar -o "$VM_DIR/$ISO_FILE" "${ISO_URL}${ISO_FILE}"
 echo "ISO saved to: $VM_DIR/$ISO_FILE"
 
-# Build a cloud-init seed ISO to guarantee open-vm-tools is installed
-echo "Building cloud-init seed ISO..."
-SEED_DIR=$(mktemp -d)
-SEED_ISO="$VM_DIR/seed.iso"
-
-# user-data: installs open-vm-tools and lets the OS handle packages
-cat > "$SEED_DIR/user-data" <<'CLOUDINIT'
-#cloud-config
-package_update: false
-package_upgrade: false
-
-runcmd:
-  - while ! ping -c1 8.8.8.8 > /dev/null 2>&1; do sleep 5; done
-  - apt-get update -y
-  - apt-get install -y open-vm-tools
-  - systemctl enable open-vm-tools
-  - systemctl start open-vm-tools
-CLOUDINIT
-
-# meta-data is required but can be minimal
-cat > "$SEED_DIR/meta-data" <<'METADATA'
-instance-id: vm-autoinstall
-local-hostname: ubuntu-vm
-METADATA
-
-# Create the seed ISO (macOS built-in hdiutil — no extra tools needed)
-hdiutil makehybrid \
-    -o "$SEED_ISO" \
-    -hfs -joliet -iso \
-    -default-volume-name cidata \
-    "$SEED_DIR" \
-    -quiet
-
-rm -rf "$SEED_DIR"
-echo "Seed ISO created: $SEED_ISO"
-
 # Create the virtual disk
 "$VMWARE_PATH/vmware-vdiskmanager" -c -s "$VM_HDD" -t 0 "$VM_NAME.vmdk"
 
@@ -77,10 +41,6 @@ sata0:1.present = "TRUE"
 sata0:1.fileName = "$VM_DIR/$ISO_FILE"
 sata0:1.deviceType = "cdrom-image"
 sata0:1.startConnected = "TRUE"
-sata0:2.present = "TRUE"
-sata0:2.fileName = "$SEED_ISO"
-sata0:2.deviceType = "cdrom-image"
-sata0:2.startConnected = "TRUE"
 usb.present = "TRUE"
 ethernet0.present = "TRUE"
 ethernet0.connectionType = "bridged"
@@ -90,7 +50,7 @@ floppy0.present = "FALSE"
 msg.autoAnswer = "TRUE"
 EOF
 
-echo "VMX created with main ISO and cloud-init seed ISO."
+echo "VMX created with FPP ISO."
 
 # Start the VM
 echo "Starting VM..."
@@ -101,6 +61,5 @@ sleep 10
 
 # Prevent ISO reconnect on next boot
 sed -i '' 's/sata0:1.startConnected = "TRUE"/sata0:1.startConnected = "FALSE"/' "$VMX_PATH"
-sed -i '' 's/sata0:2.startConnected = "TRUE"/sata0:2.startConnected = "FALSE"/' "$VMX_PATH"
 
 echo "Done! VM '$VM_NAME' is now running."
