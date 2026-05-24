@@ -179,7 +179,10 @@ jobs:
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
           
-      - name: Create GitHub Release for ${{ steps.version.outputs.version }} / ${{ github.event.inputs.fpp_branch }}
+      - name: Create GitHub Release for ${{ steps.version.outputs.version }} / ${{ github.event.inputs.fpp_install_branch }}
+        env:
+          FPP_INSTALL_BRANCH: ${{ env.FPP_INSTALL_BRANCH }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: ${{ steps.version.outputs.version }}
@@ -188,7 +191,7 @@ jobs:
             ## FPP-OS Install ISO
 
             Bootable ISO that installs FPP using a Debian-based environment.
-            FPP Branch: ${{ github.event.inputs.fpp_branch || 'master' }}
+            FPP Branch: ${{ env.FPP_INSTALL_BRANCH }}
 
             ### How to use
             See [README.md](../../blob/master/README.md) for installation instructions.
@@ -207,8 +210,6 @@ jobs:
             ${{ env.ISO_FILE }}.md5
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create ${{ steps.version.outputs.version }} branch
         run: |
