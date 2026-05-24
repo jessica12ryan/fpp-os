@@ -15,9 +15,14 @@ on:
         description: 'Release tag (e.g. v1.0.0). Leave blank to auto-generate.'
         required: false
         default: ''
+      fpp_install_branch:
+        description: 'FPP branch or version to install (e.g. master, 9.5.3)'
+        required: true
+        default: 'master'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  FPP_INSTALL_BRANCH: ${{ github.event.inputs.fpp_install_branch || 'master' }}
         
 jobs:
   build-iso:
@@ -89,10 +94,11 @@ jobs:
       - name: Generate preseed
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          FPP_INSTALL_BRANCH: ${{ env.FPP_INSTALL_BRANCH }}
         run: |
-          echo "${VERSION} is being pushed to preseed template"
-          echo "This must match the version being pushed or the OS will have a mismatch"
-          envsubst '${VERSION}' < preseed/fpp.template.preseed > preseed/fpp.preseed
+          echo "FPP-OS ${VERSION} is being pushed to preseed template with FPP Branch: ${FPP_INSTALL_BRANCH}"
+          echo "FPP-OS version must match the version being pushed or the OS will have a mismatch"
+          envsubst '${VERSION} ${FPP_INSTALL_BRANCH}' < preseed/fpp.template.preseed > preseed/fpp.preseed
 
       - name: Build FPP-OS ISO
         run: |
@@ -173,7 +179,7 @@ jobs:
           echo "$NOTES" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
           
-      - name: Create GitHub Release for ${{ steps.version.outputs.version }}
+      - name: Create GitHub Release for ${{ steps.version.outputs.version }} / ${{ github.event.inputs.fpp_branch }}
         uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: ${{ steps.version.outputs.version }}
@@ -182,8 +188,7 @@ jobs:
             ## FPP-OS Install ISO
 
             Bootable ISO that installs FPP using a Debian-based environment.
-
-            **WARNING: All data will be wiped on local drive automatically once booted from the ISO!**
+            FPP Branch: ${{ github.event.inputs.fpp_branch || 'master' }}
 
             ### How to use
             See [README.md](../../blob/master/README.md) for installation instructions.
