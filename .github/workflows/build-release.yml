@@ -26,7 +26,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   FPP_INSTALL_BRANCH: ${{ github.event.inputs.fpp_install_branch || 'master' }}
         
 jobs:
@@ -188,7 +187,7 @@ jobs:
         env:
           FPP_INSTALL_BRANCH: ${{ env.FPP_INSTALL_BRANCH }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
@@ -229,7 +228,7 @@ jobs:
           git push origin latest --force
 
       - name: Upload ISO as artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v6
         with:
           name: fpp-os-iso
           path: |
