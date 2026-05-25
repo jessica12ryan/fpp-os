@@ -156,7 +156,7 @@ checkTimeAgainstUSNO () {
 
 		# allow clocks to differ by 24 hours to handle time zone differences
 		THRESHOLD=86400
-        USNODATE=$(curl -I --connect-timeout 10 --max-time 10 --retry 2 --retry-max-time 10 -f -v --silent https://nist.time.gov/ 2>&1 \ | grep '< Date' | sed -e 's/< Date: //')
+        USNODATE=$(curl -I --connect-timeout 10 --max-time 10 --retry 2 --retry-max-time 10 -f -v --silent https://time.gov/ 2>&1 \ | grep '< Date' | sed -e 's/< Date: //')
         if  [ "x${USNODATE}" != "x" ]
         then
         USNOSECS=$(date -d "${USNODATE}" +%s)
@@ -390,6 +390,7 @@ then
     rm -f /etc/fpp/arch
     rm -f /etc/fpp/rfs_version
     rm -f /etc/fpp/desktop
+	rm -rf /etc/fpp
 fi
 
 #######################################
@@ -530,9 +531,7 @@ install_base_packages() {
             # Ensure networkd config exists BEFORE switching anything
             rm -f /etc/systemd/network/50-default.network
 
-            curl -fsSL \
-                -o /etc/systemd/network/50-default.network \
-                https://raw.githubusercontent.com/FalconChristmas/fpp/master/etc/systemd/network/50-default.network
+            curl -fsSL -o /etc/systemd/network/50-default.network https://raw.githubusercontent.com/FalconChristmas/fpp/master/etc/systemd/network/50-default.network
 
             # Install required packages first
             apt-get update
@@ -759,7 +758,7 @@ install_base_packages() {
             if [ ! -f /etc/systemd/network/50-default.network ]; then
                 # Need to make sure there is configuration for eth0 or no connection will be
                 # setup after a reboot
-                curl -o /etc/systemd/network/50-default.network https://raw.githubusercontent.com/FalconChristmas/fpp/master/etc/systemd/network/50-default.network
+                curl -fsSL -o /etc/systemd/network/50-default.network https://raw.githubusercontent.com/FalconChristmas/fpp/master/etc/systemd/network/50-default.network
             fi
             # make sure we end up with eth0/wlan0 instead of enx#### wlx#### naming for now
             ln -s /dev/null /etc/systemd/network/99-default.link
@@ -1012,6 +1011,9 @@ gpu_mem=128
 gpu_mem=64
 [pi02]
 gpu_mem=128
+dtparam=audio=off                                                                                                                                                                                                            
+hdmi_force_hotplug=1                                                                                                                                                                                                         
+hdmi_drive=2
 [pi1]
 gpu_mem=64
 [pi2]
@@ -1032,6 +1034,15 @@ EOF
         #     briefly blanks the display.
         echo "FPP - Updating SPI buffer size and audio device selection"
         sed -i 's/$/ spidev.bufsiz=102400 snd_bcm2835.enable_headphones=1 snd_bcm2835.enable_hdmi=0/' ${BOOTDIR}/cmdline.txt
+        # Pi Zero 2 W uses vc4-hdmi for HDMI audio with dtparam=audio=off, so
+        # snd_bcm2835 is never loaded — its cmdline params must be absent or the
+        # module won't be present to honour them, and some kernel versions treat
+        # unknown module params as fatal.  Strip them for this model only.
+        if echo "${MODEL}" | grep -q "Zero 2"; then
+            echo "FPP - Pi Zero 2 W detected: removing snd_bcm2835 cmdline params (vc4-hdmi handles HDMI audio)"
+            sed -i 's/ snd_bcm2835\.enable_headphones=[0-9]*//g' ${BOOTDIR}/cmdline.txt
+            sed -i 's/ snd_bcm2835\.enable_hdmi=[0-9]*//g' ${BOOTDIR}/cmdline.txt
+        fi
 
         echo "FPP - Updating root partition device"
         sed -i 's/root=PARTUUID=[A-Fa-f0-9-]* /root=\/dev\/mmcblk0p2 /g' ${BOOTDIR}/cmdline.txt
@@ -1577,7 +1588,7 @@ EOF
 
     COMMENTED=""
     SDA1=$(lsblk -l | grep sda1 | awk '{print $7}')
-    if [ -n ${SDA1} ]
+    if [ -n "${SDA1}" ]
     then
         COMMENTED="#"
     fi
