@@ -20,6 +20,11 @@ on:
         required: true
         default: 'master'
 
+# A manual re-run on the same ref should cancel a running build
+concurrency:
+  group: build-release-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   FPP_INSTALL_BRANCH: ${{ github.event.inputs.fpp_install_branch || 'master' }}

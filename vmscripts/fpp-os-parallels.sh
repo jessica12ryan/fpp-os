@@ -32,7 +32,7 @@ prlctl create "$VM_NAME" -o linux --dst ~/Parallels/
 prlctl set "$VM_NAME" --device-del hdd0
 
 # 2. Configure Hardware Resources
-prlctl set "$VM_NAME" --memsize "$RAM_SIZE" --cpus 4
+prlctl set "$VM_NAME" --memsize "$RAM_SIZE" --cpus 2 --cpu-hotplug off
 
 # 3. Configure Network to Bridged Mode
 # 'bridged' tells Parallels to bind to the default active network adapter (Wi-Fi or Ethernet)
