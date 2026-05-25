@@ -1,3 +1,15 @@
+## [0.0.54] - 2026-05-25
+
+- More minor updates before new release (jessica12ryan)
+- Update README.md (jessica12ryan)
+- More minor vm fixes (jessica12ryan)
+- Some minor fixes for vm scripts (jessica12ryan)
+- Minor syntax repairs in build workflow (jessica12ryan)
+- Update build workflow and template preseed to support versioning when FPP 10 is released (jessica12ryan)
+- Remove fpp-install.service and FPP_Install.sh after installation (jessica12ryan)
+
+---
+
 ## [0.0.53] - 2026-05-18
 
 - Add script for VMware Wks, fix Hyper-V, and made install scripts more consistent (jessica12ryan)
