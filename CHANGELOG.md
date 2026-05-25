@@ -1,3 +1,9 @@
+## [0.0.56] - 2026-05-25
+
+- Try to fix fpp_install not running (jessica12ryan)
+
+---
+
 ## [0.0.55] - 2026-05-25
 
 - Fix for script halting at post install steps (jessica12ryan)
