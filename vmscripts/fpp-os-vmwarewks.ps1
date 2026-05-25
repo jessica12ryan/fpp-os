@@ -67,8 +67,8 @@ guestOS = "otherlinux-64"
 
 # Hardware Specs (Now using converted MB value)
 memsize = "$RAMInMB"
-numvcpus = "2"
-cpuid.coresPerSocket = "1"
+numvcpus = "1"
+cpuid.coresPerSocket = "2"
 
 # Firmware & Secure Boot (Microsoft UEFI CA equivalent)
 firmware = "efi"

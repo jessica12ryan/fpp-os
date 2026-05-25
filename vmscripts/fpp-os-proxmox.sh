@@ -23,29 +23,29 @@ wget -O "$ISO_PATH" "$ISO_URL"
 
 echo "Creating VM $VMID..."
 # Create VM — only called ONCE
-qm create $VMID \
+qm create "$VMID" \
   --name "$VMNAME" \
-  --memory $MEMORY \
+  --memory "$MEMORY" \
   --cores 2 \
   --sockets 1 \
   --net0 virtio,bridge=vmbr0 \
-  --scsihw virtio-scsi-pci     # ← Moved here, not a second qm create
+  --scsihw virtio-scsi-pci
 
 # Configure machine/firmware
-qm set $VMID --ostype l26
-qm set $VMID --machine q35
-qm set $VMID --bios ovmf
-qm set $VMID --efidisk0 $STORAGE:1,efitype=4m,pre-enrolled-keys=1
+qm set "$VMID" --ostype l26
+qm set "$VMID" --machine q35
+qm set "$VMID" --bios ovmf
+qm set "$VMID" --efidisk0 "$STORAGE:1,efitype=4m,pre-enrolled-keys=1"
 
 # Add a blank disk for the OS
-qm set $VMID --scsi0 $STORAGE:$DISK_SIZE
+qm set "$VMID" --scsi0 "$STORAGE:$DISK_SIZE"
 
 # Attach the ISO as a CD-ROM using Proxmox storage syntax (not raw path)
-qm set $VMID --ide2 local:iso/$ISO_NAME,media=cdrom
+qm set "$VMID" --ide2 "local:iso/$ISO_NAME,media=cdrom"
 
 # Boot from CD first, then disk
-qm set $VMID --boot order=ide2\;scsi0
+qm set "$VMID" --boot "order=ide2\;scsi0"
 
 echo "VM $VMID created. Starting..."
-qm start $VMID
+qm start "$VMID"
 echo "Access the VM console to proceed with installation."
