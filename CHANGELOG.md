@@ -1,3 +1,9 @@
+## [0.0.55] - 2026-05-25
+
+- Fix for script halting at post install steps (jessica12ryan)
+
+---
+
 ## [0.0.54] - 2026-05-25
 
 - More minor updates before new release (jessica12ryan)
