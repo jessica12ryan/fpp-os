@@ -10,6 +10,7 @@ read -p "Enter Storage Pool (e.g., local-lvm): " STORAGE
 
 # Strip out "GB" or "gb" if the user accidentally typed it
 MEM_GB=$(echo "$MEM_GB" | sed -E 's/[Gg][Bb]//g' | tr -d ' ')
+DISK_SIZE=$(echo "$DISK_SIZE" | sed -E 's/[Gg][Bb]//g' | tr -d ' ')
 
 # Convert to MB (GB * 1024)
 MEMORY=$((MEM_GB * 1024))
@@ -44,7 +45,7 @@ qm set "$VMID" --scsi0 "$STORAGE:$DISK_SIZE"
 qm set "$VMID" --ide2 "local:iso/$ISO_NAME,media=cdrom"
 
 # Boot from CD first, then disk
-qm set "$VMID" --boot "order=ide2\;scsi0"
+qm set "$VMID" --boot "order=ide2;scsi0"
 
 echo "VM $VMID created. Starting..."
 qm start "$VMID"

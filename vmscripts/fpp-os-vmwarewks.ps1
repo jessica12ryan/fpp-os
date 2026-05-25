@@ -66,8 +66,9 @@ displayName = "$VMName"
 guestOS = "otherlinux-64"
 
 # Hardware Specs (Now using converted MB value)
+# 2/2 on CPU sets for 2 cores on a single socket
 memsize = "$RAMInMB"
-numvcpus = "1"
+numvcpus = "2"
 cpuid.coresPerSocket = "2"
 
 # Firmware & Secure Boot (Microsoft UEFI CA equivalent)
