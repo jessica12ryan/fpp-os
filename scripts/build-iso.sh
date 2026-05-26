@@ -22,6 +22,12 @@ MOUNT_DIR="${WORK_DIR}/mnt"
 ISO_DIR="${WORK_DIR}/iso-contents"
 ORIGINAL_ISO="${WORK_DIR}/debian-original.iso"
 
+# ── Colour helpers ─────────────────────────────────────────────────────────────
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
+warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
+
 # ── Version ───────────────────────────────────────────────────────────────────
 if [[ -z "${NEW_VERSION:-}" ]]; then
     if [[ -f "${SCRIPT_DIR}/VERSION.txt" ]]; then
@@ -31,12 +37,6 @@ if [[ -z "${NEW_VERSION:-}" ]]; then
         error "NEW_VERSION is not set and VERSION.txt was not found. Pass it as: NEW_VERSION=x.y.z sudo bash scripts/build-iso.sh"
     fi
 fi
-
-# ── Colour helpers ─────────────────────────────────────────────────────────────
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
-info()  { echo -e "${GREEN}[INFO]${NC}  $*"; }
-warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
 # ── Cleanup (unmount first) ────────────────────────────────────────────────────
 cleanup() {
