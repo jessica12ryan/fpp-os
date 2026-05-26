@@ -1,3 +1,16 @@
+## [0.0.58] - 2026-05-26
+
+- Fix logical grouping in network adapter selection (jessica12ryan)
+- Fix typo in preseed placement message (jessica12ryan)
+- Upgrade GitHub release action to version 3 (jessica12ryan)
+- Move color helper functions to the top of the script (jessica12ryan)
+- Modify FPP installation script creation process (jessica12ryan)
+- Move reboot command from Post_Install script to fpp-install.service (jessica12ryan)
+- Update memory requirements in README (jessica12ryan)
+- Remove systemd-timesyncd installation commands (jessica12ryan)
+
+---
+
 ## [0.0.57] - 2026-05-26
 
 - Downgrade action-gh-release to version 2.3.2 (jessica12ryan)
