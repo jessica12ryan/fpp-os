@@ -1,3 +1,11 @@
+## [0.0.57] - 2026-05-26
+
+- Downgrade action-gh-release to version 2.3.2 (jessica12ryan)
+- Disable fpp-install service and install timesyncd (jessica12ryan)
+- Trying to fix crash during post-install steps (jessica12ryan)
+
+---
+
 ## [0.0.56] - 2026-05-25
 
 - Try to fix fpp_install not running (jessica12ryan)
