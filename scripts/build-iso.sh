@@ -116,7 +116,7 @@ embed_preseed() {
 
     # Copy to ISO root as preseed.cfg (accessible at /cdrom/preseed.cfg)
     cp "$preseed_src" "${ISO_DIR}/preseed.cfg"
-    info "✓ Preseed placed at ISO root window."
+    info "✓ Preseed placed at ISO root directory."
 }
 
 # ── Patch boot menus ───────────────────────────────────────────────────────────
