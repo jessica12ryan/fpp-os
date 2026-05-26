@@ -55,7 +55,7 @@ $ExternalSwitch = Get-VMSwitch | Where-Object { $_.SwitchType -eq 'External' } |
 
 if ($null -eq $ExternalSwitch) {
     Write-Host "No bridged (External) switch found. Attempting to create one..." -ForegroundColor Yellow
-    $ActiveNetAdapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and $_.PhysicalMediaType -like "*802.3*" -or $_.PhysicalMediaType -like "*Wireless*" } | Select-Object -First 1
+    $ActiveNetAdapter = Get-NetAdapter | Where-Object { $_.Status -eq 'Up' -and ($_.PhysicalMediaType -like "*802.3*" -or $_.PhysicalMediaType -like "*Wireless*") } | Select-Object -First 1
     
     if ($null -eq $ActiveNetAdapter) {
         Write-Error "No active physical network adapter found to bridge."
