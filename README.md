@@ -52,7 +52,7 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 ## Global Requirements
 
  - CPU: Must be 64-Bit
- - Memory (RAM): Atleast 512MB (Recommended 2GB-4GB) depending on size of show
+ - Memory (RAM): Atleast 512MB for bare metal, Atleast 1GB for VM's (Recommended 2GB-4GB) depending on size of show
  - Disk Size: Atleast 4GB (Recommended 16-64GB) depending on size of show
  - Network: Must have an internet connection
  - Physical machine or VM instance must be dedicated to FPP
