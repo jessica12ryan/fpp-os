@@ -187,7 +187,7 @@ jobs:
         env:
           FPP_INSTALL_BRANCH: ${{ env.FPP_INSTALL_BRANCH }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
