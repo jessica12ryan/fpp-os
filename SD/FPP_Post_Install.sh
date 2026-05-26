@@ -1,5 +1,4 @@
 systemctl disable fpp-install.service
-rm -f /etc/systemd/system/fpp-install.service
 apt-get install systemd-timesyncd -y
 systemctl enable --now systemd-timesyncd
 rm -rf /etc/ssh/ssh_host*key*
