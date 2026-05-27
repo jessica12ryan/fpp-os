@@ -1,3 +1,11 @@
+## [0.1.0] - 2026-05-27
+
+- Fix release tag description and version bump logic (jessica12ryan)
+- Some minor fixes and typos (jessica12ryan)
+- Confirm internet connection before starting FPP installation (jessica12ryan)
+
+---
+
 ## [0.0.58] - 2026-05-26
 
 - Fix logical grouping in network adapter selection (jessica12ryan)
