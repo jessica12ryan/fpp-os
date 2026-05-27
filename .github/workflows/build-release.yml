@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag (e.g. v1.0.0). Leave blank to auto-generate.'
+        description: 'Release tag (e.g. 1.0.0). Leave blank to auto-generate.'
         required: false
         default: ''
       fpp_install_branch:
@@ -64,19 +64,29 @@ jobs:
       - name: Read and bump version
         id: version
         run: |
-          VERSION_FILE="VERSION.txt"
-          CURRENT_VERSION=$(cat "$VERSION_FILE")
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          INPUT_TAG="${{ github.event.inputs.release_tag }}"
 
-          if [[ -z "$PATCH" ]]; then
-            PATCH=0
-          fi
-
-          if [[ "$CURRENT_VERSION" == "$MAJOR.$MINOR" ]]; then
-            NEW_VERSION="${MAJOR}.${MINOR}.1"
+          if [[ -n "$INPUT_TAG" ]]; then
+            # Strip a leading 'v' if present (e.g. v1.2.3 → 1.2.3)
+            NEW_VERSION="${INPUT_TAG#v}"
+            echo "Using provided release tag: $NEW_VERSION"
           else
-            NEW_PATCH=$((PATCH + 1))
-            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+            VERSION_FILE="VERSION.txt"
+            CURRENT_VERSION=$(cat "$VERSION_FILE")
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+            if [[ -z "$PATCH" ]]; then
+              PATCH=0
+            fi
+
+            if [[ "$CURRENT_VERSION" == "$MAJOR.$MINOR" ]]; then
+              NEW_VERSION="${MAJOR}.${MINOR}.1"
+            else
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+            fi
+
+            echo "Auto-incremented version: $NEW_VERSION"
           fi
 
           echo "NEW_VERSION=$NEW_VERSION" >> "$GITHUB_ENV"
