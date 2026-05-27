@@ -52,8 +52,8 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 ## Global Requirements
 
  - CPU: Must be 64-Bit
- - Memory (RAM): Atleast 512MB for bare metal, Atleast 1GB for VM's (Recommended 2GB-4GB) depending on size of show
- - Disk Size: Atleast 4GB (Recommended 16-64GB) depending on size of show
+ - Memory (RAM): Minimum 512MB for bare metal, Minimum 1GB for VM's (Recommended 2GB-4GB) depending on size of show
+ - Disk Size: Minimum 4GB (Recommended 16-64GB) depending on size of show
  - Network: Must have an internet connection
  - Physical machine or VM instance must be dedicated to FPP
  - Hardware must be compatible with Debian 13
@@ -189,7 +189,7 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 8. System will reboot when completed
 9. After reboot, login as root with password falcon, and run the following command
 ```
-sudo apt update && sudo apt install open-vm-tools -y
+apt update && apt install open-vm-tools -y
 ```
 10. See [Post-Installation](#post-installation) for next steps
 

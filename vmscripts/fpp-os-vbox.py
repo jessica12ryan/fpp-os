@@ -118,8 +118,17 @@ def main():
         "--usbehci", "on"
     ])
 
-    # 6. Create Virtual Disk (Stored relative to where you run the script)
-    vdi_path = os.path.abspath(f"{vm_name}.vdi")
+    # 6. Create Virtual Disk (stored in the VM's own folder)
+    info = subprocess.run(
+        [vbox_cmd, "showvminfo", vm_name, "--machinereadable"],
+        capture_output=True, text=True
+    ).stdout
+    vm_folder = next(
+        (os.path.dirname(line.split("=", 1)[1].strip('"'))
+         for line in info.splitlines() if line.startswith("CfgFile=")),
+        os.path.expanduser("~")
+    )
+    vdi_path = os.path.join(vm_folder, f"{vm_name}.vdi")
     run_vbox_cmd([vbox_cmd, "createmedium", "disk", "--filename", vdi_path, "--size", disk_size_mb, "--format", "VDI"])
 
     # 7. Add Storage Controllers

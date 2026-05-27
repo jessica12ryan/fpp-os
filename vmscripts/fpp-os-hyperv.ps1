@@ -17,9 +17,13 @@ $RAMInMB   = "${CleanRAM}GB"
 $CleanDisk = $DiskInput.ToString().Trim().Replace('GB','').Replace('gb','')
 $DiskSize  = "${CleanDisk}GB"
 
-# Convert string inputs to proper bytes for Hyper-V cmdlets
-$RAM      = [long](Invoke-Expression $RAMInput)
-$VHDSize  = [long](Invoke-Expression $DiskInput)
+# Validate and convert to bytes for Hyper-V cmdlets
+if (-not ($CleanRAM -match '^\d+$') -or -not ($CleanDisk -match '^\d+$')) {
+    Write-Error "RAM and Disk size must be whole numbers (e.g. 4, 32). Exiting."
+    Exit
+}
+$RAM     = [long]::Parse($CleanRAM)  * 1GB
+$VHDSize = [long]::Parse($CleanDisk) * 1GB
 
 # Base Paths
 $ISOInput  = "https://github.com/jessica12ryan/fpp-os/releases/latest/download/fpp-os-amd64.iso"
