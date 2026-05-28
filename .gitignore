@@ -24,4 +24,3 @@ __pycache__/
 # USB Flasher
 flasher/node_modules/
 flasher/dist/
-flasher/package-lock.json
