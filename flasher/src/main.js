@@ -4,7 +4,7 @@ const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
 const { exec } = require('child_process')
-const drivelist = require('drivelist')
+const { execSync } = require('child_process')
 
 let mainWindow
 
@@ -57,15 +57,70 @@ ipcMain.handle('get-latest-release', async () => {
 
 // ── List removable drives ─────────────────────────────────────────────────────
 ipcMain.handle('list-drives', async () => {
-  const drives = await drivelist.list()
-  return drives
-    .filter(d => d.isRemovable && !d.isSystem)
-    .map(d => ({
-      device: d.device,
-      description: d.description,
-      size: d.size,
-      displayName: `${d.description} — ${d.device} (${formatBytes(d.size)})`
-    }))
+  return new Promise((resolve, reject) => {
+    try {
+      let drives = []
+
+      if (process.platform === 'win32') {
+        const output = execSync(
+          'wmic diskdrive get DeviceID,Caption,Size,MediaType /format:csv',
+          { encoding: 'utf8' }
+        )
+        drives = output.split('\n')
+          .filter(l => l.includes('Removable') || l.includes('External'))
+          .map(l => {
+            const parts = l.split(',')
+            return {
+              device: parts[1]?.trim(),
+              description: parts[2]?.trim(),
+              size: parseInt(parts[4]?.trim() || '0'),
+              displayName: `${parts[2]?.trim()} — ${parts[1]?.trim()} (${formatBytes(parseInt(parts[4]?.trim() || '0'))})`
+            }
+          }).filter(d => d.device)
+
+      } else if (process.platform === 'darwin') {
+        const output = execSync(
+          'diskutil list -plist external | plutil -convert json -o - -',
+          { encoding: 'utf8' }
+        )
+        const parsed = JSON.parse(output)
+        drives = (parsed.AllDisksAndPartitions || [])
+          .filter(d => d.DeviceIdentifier && !d.DeviceIdentifier.includes('s'))
+          .map(d => {
+            const info = JSON.parse(execSync(
+              `diskutil info -plist /dev/${d.DeviceIdentifier}`,
+              { encoding: 'utf8' }
+            ))
+            return {
+              device: `/dev/${d.DeviceIdentifier}`,
+              description: info.MediaName || info.IORegistryEntryName || d.DeviceIdentifier,
+              size: info.TotalSize || 0,
+              displayName: `${info.MediaName || d.DeviceIdentifier} — /dev/${d.DeviceIdentifier} (${formatBytes(info.TotalSize || 0)})`
+            }
+          })
+
+      } else {
+        // Linux — parse lsblk
+        const output = execSync(
+          'lsblk -J -o NAME,SIZE,TYPE,RM,HOTPLUG,VENDOR,MODEL',
+          { encoding: 'utf8' }
+        )
+        const parsed = JSON.parse(output)
+        drives = (parsed.blockdevices || [])
+          .filter(d => d.type === 'disk' && (d.rm === true || d.hotplug === true))
+          .map(d => ({
+            device: `/dev/${d.name}`,
+            description: `${d.vendor?.trim() || ''} ${d.model?.trim() || ''}`.trim() || d.name,
+            size: 0,
+            displayName: `${d.vendor?.trim() || ''} ${d.model?.trim() || ''} — /dev/${d.name} (${d.size})`.trim()
+          }))
+      }
+
+      resolve(drives)
+    } catch (e) {
+      reject(e)
+    }
+  })
 })
 
 // ── Download ISO ──────────────────────────────────────────────────────────────

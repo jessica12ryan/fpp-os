@@ -12,7 +12,7 @@
     "electron-builder": "^25.0.0"
   },
   "dependencies": {
-    "drivelist": "^9.2.4",
+    "@serialport/list": "^10.0.0",
     "sudo-prompt": "^9.2.1"
   }
 }
