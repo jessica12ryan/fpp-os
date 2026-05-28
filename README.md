@@ -1,8 +1,8 @@
-# FPP-OS - Falcon Player OS (Beta)
+# FPP-OS - Falcon Player OS for PC's and VM's (Beta)
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
-This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine.
+This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM enviroments.
 
 FPP-OS currently uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
 
@@ -28,6 +28,18 @@ The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is s
 ## 📥 Download (For Physical PC's)
 
 Downloading the ISO is not required for Virtual Machines as the VM script will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
+
+### FPP-OS Flasher (Recommended)
+The easiest way to get started. Downloads the latest ISO automatically and
+flashes it to your USB drive in one click.
+
+| Platform | Download |
+|----------|---------|
+| Windows  | `FPP-OS-Flasher-Setup-x.x.x.exe` |
+| macOS    | `FPP-OS-Flasher-x.x.x.dmg` |
+| Linux    | `FPP-OS-Flasher-x.x.x.AppImage` |
+
+Grab the latest flasher from the [**Releases**](../../releases/latest) page.
 
 ### Manual ISO Download
 If you prefer to flash manually, grab the ISO directly from the
@@ -66,24 +78,19 @@ This guide covers installation on:
 
 #### Requirements
 - USB drive (4GB+)
-- ISO image
-- A computer with [Rufus](https://rufus.ie) or Balena [Balena Etcher](https://etcher.balena.io) installed
+- Completed the steps above to download and flash ISO to USB
 
 #### Steps
 
-1. Download the latest ISO file.
-2. Create a bootable USB:
-   - Windows: Use Rufus or Balena Etcher
-   - macOS/Linux: Use Balena Etcher or `dd`
-3. Insert USB into the target PC.
-4. Boot into BIOS/UEFI (usually `F2`, `DEL`, or `F12`).
-5. Select USB as boot device.
-6. Installation will start
-7. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
-8. Installation of OS finishes and warns to remove install media and the system shuts down
-9. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
-10. System will reboot when completed
-11. See [Post-Installation](#post-installation) for next steps
+1. Insert the USB containing FPP-OS into the target PC.
+2. Boot into BIOS/UEFI (usually `F2`, `DEL`, or `F12`).
+3. Select USB as boot device.
+4. Installation will start
+5. Confirm hard drive contents will be overwritten by selecting yes, then wait for OS to finish installing
+6. Installation of OS finishes and warns to remove install media and the system shuts down
+7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
+8. System will reboot when completed
+9. See [Post-Installation](#post-installation) for next steps
 
 
 ---

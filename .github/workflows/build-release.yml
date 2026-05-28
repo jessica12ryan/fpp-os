@@ -202,10 +202,12 @@ jobs:
           tag_name: ${{ steps.version.outputs.version }}
           name: "FPP-OS – ${{ steps.version.outputs.version }}"
           body: |
-            ## FPP-OS Install ISO
+            ## FPP-OS Install ISO and USB Flasher
 
             Bootable ISO that installs FPP using a Debian-based environment.
             FPP Branch: ${{ env.FPP_INSTALL_BRANCH }}
+
+            ISO file is not needed if you are using the USB flasher (Recommended).
 
             ### How to use
             See [README.md](../../blob/master/README.md) for installation instructions.

@@ -27,23 +27,41 @@ The output ISO will be in the repo root: `fpp-os-amd64.iso`
 ```
 fpp-debian/
 ├── .github/
-│   └── workflows/
-│       └── build-release.yml   # GitHub Actions: build + release ISO
-├── SD/
-│   ├── FPP_Install.sh          # FPP_Install.sh script from FPP repo (cached)
-│   └── FPP_Post_Install.sh     # Commands to be run after FPP_Install.sh has completed
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   ├── workflows/
+│   │   └── build-release.yml   # GitHub Actions: build + release ISO
+│   ├── dependabot.yml
+│   └── FUNDING.yml
+├── flasher/
+│   └── *              #Contains files for building the USB Flasher
 ├── isolinux/
-│   └── README.txt              # Placeholder for splash screen
+│   └── README.txt              # Placeholder for custom splash/branding
 ├── preseed/
-│   └── fpp.preseed             # Debian preseed (automates install, skips partitioning)
-├── proxmox/
-│   └── fpp-os.sh               # Proxmox Helper Script
+│   └── fpp.template.preseed             # Debian preseed (automates install, skips partitioning)
 ├── scripts/
 │   ├── build-iso.sh            # Main ISO build script
 │   ├── patch-isolinux.py       # Patches BIOS boot menu
 │   └── patch-grub.py           # Patches UEFI GRUB menu
-├── isolinux/                   # Optional: custom splash/branding
-└── README.md
+├── SD/
+│   ├── FPP_Install.sh          # FPP_Install.sh script from FPP repo (cached)
+│   ├── FPP_Post_Install.sh     # Commands to be run after FPP_Install.sh has completed
+│   └── FPP_Pre_Install.sh     # Commands to be run after FPP_Install.sh has completed
+├── vmscripts/
+│   ├── fpp-os-hyperv.ps1
+│   ├── fpp-os-parallels.sh
+│   ├── fpp-os-proxmox.sh               # Proxmox Helper Script
+│   ├── fpp-os-vbox.py
+│   ├── fpp-os-vmfusion.sh
+│   └── fpp-os-vmwarewks.ps1
+├── .gitignore
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE.md
+├── README.md
+├── SECURITY.md
+└── VERSION.txt
 ```
 
 ---
