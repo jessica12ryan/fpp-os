@@ -1,9 +1,8 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 const path  = require('path')
 const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
-const { exec } = require('child_process')
 const { execSync } = require('child_process')
 
 let mainWindow
@@ -63,21 +62,24 @@ ipcMain.handle('list-drives', async () => {
 
       if (process.platform === 'win32') {
         const output = execSync(
-          'wmic diskdrive get DeviceID,Caption,Size,MediaType /format:csv',
+          'powershell -Command "Get-Disk | Where-Object { $_.BusType -eq \'USB\' } | Select-Object Number,FriendlyName,Size | ConvertTo-Csv -NoTypeInformation"',
           { encoding: 'utf8' }
         )
-        drives = output.split('\n')
-          .filter(l => l.includes('Removable') || l.includes('External'))
-          .map(l => {
-            const parts = l.split(',')
+        const lines = output.trim().split('\n').slice(1) // skip header row
+        drives = lines
+          .map(line => {
+            const parts = line.split(',').map(p => p.replace(/"/g, '').trim())
+            const num  = parts[0]
+            const name = parts[1]
+            const size = parseInt(parts[2] || '0')
             return {
-              device: parts[1]?.trim(),
-              description: parts[2]?.trim(),
-              size: parseInt(parts[4]?.trim() || '0'),
-              displayName: `${parts[2]?.trim()} — ${parts[1]?.trim()} (${formatBytes(parseInt(parts[4]?.trim() || '0'))})`
+              device:      `\\\\.\\PhysicalDrive${num}`,
+              description: name,
+              size:        size,
+              displayName: `${name} — \\\\.\\PhysicalDrive${num} (${formatBytes(size)})`
             }
-          }).filter(d => d.device)
-
+          })
+          .filter(d => d.description && d.device)
       } else if (process.platform === 'darwin') {
         const output = execSync(
           'diskutil list -plist external | plutil -convert json -o - -',
@@ -124,7 +126,8 @@ ipcMain.handle('list-drives', async () => {
 })
 
 // ── Download ISO ──────────────────────────────────────────────────────────────
-ipcMain.handle('download-iso', async (_event, url, destPath) => {
+ipcMain.handle('download-iso', async (_event, url, isoName) => {
+  const destPath = path.join(app.getPath('downloads'), isoName)
   return new Promise((resolve, reject) => {
     const follow = (url) => {
       const mod = url.startsWith('https') ? https : http

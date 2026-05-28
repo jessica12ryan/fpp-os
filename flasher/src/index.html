@@ -424,12 +424,6 @@
     return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`
   }
 
-  // ── ISO download path ─────────────────────────────────────────────────────────
-  function getIsoPath(name) {
-    // Electron exposes process via contextBridge if needed; use temp-ish location
-    return (window.__dirname || '') + (os === 'win' ? '\\' : '/') + (name || 'fpp-os.iso')
-  }
-
   // ── Load release info ─────────────────────────────────────────────────────────
   async function loadRelease() {
     el.statusDot.className = 'status-dot loading'
@@ -442,7 +436,6 @@
       el.headerVersion.textContent   = `v${releaseInfo.version}`
       el.releaseMeta.innerHTML       = `ISO <span>${releaseInfo.isoName}</span>&nbsp;&nbsp;·&nbsp;&nbsp;${fmt(releaseInfo.isoSize)}`
       el.statusDot.className         = 'status-dot ok'
-      isoLocalPath = getIsoPath(releaseInfo.isoName)
       log(`Found release ${releaseInfo.version} — ${releaseInfo.isoName}`, 'ok')
       updateButton()
     } catch (e) {
@@ -529,7 +522,7 @@
     setIndeterminate('Starting download...')
 
     try {
-      await window.fpp.downloadISO(releaseInfo.isoUrl, isoLocalPath)
+      isoLocalPath = await window.fpp.downloadISO(releaseInfo.isoUrl, releaseInfo.isoName)
       setProgress(100, 'Download complete')
       log('Download complete', 'ok')
     } catch (e) {
