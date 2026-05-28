@@ -1,12 +1,583 @@
-// On load — fetch latest version info
-const release = await window.fpp.getLatestRelease()
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPP-OS USB Flasher</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&display=swap');
 
-// Refresh drive list
-const drives = await window.fpp.listDrives()
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #21262d;
+    --accent:    #f97316;
+    --accent2:   #fb923c;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --success:   #3fb950;
+    --danger:    #f85149;
+    --mono:      'Share Tech Mono', monospace;
+    --sans:      'Barlow', sans-serif;
+  }
 
-// Download button
-await window.fpp.downloadISO(release.isoUrl, localDestPath)
-window.fpp.onDownloadProgress(pct => { /* update progress bar */ })
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-// Flash button
-await window.fpp.flashDrive(localDestPath, selectedDrive.device)
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    -webkit-app-region: drag;
+  }
+
+  .logo {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    flex-shrink: 0;
+    animation: pulse-logo 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-logo {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.7; }
+  }
+
+  .header-text h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .header-text .version-tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Main ── */
+  main {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* ── Release info row ── */
+  .release-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .release-badge {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  .release-meta {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .release-meta span {
+    color: var(--text);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.ok      { background: var(--success); box-shadow: 0 0 6px var(--success); }
+  .status-dot.loading { background: var(--accent); animation: blink 0.8s step-end infinite; }
+  .status-dot.error   { background: var(--danger); }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ── Drive selector ── */
+  .drive-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  select {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  .btn-icon {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .btn-icon:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-wrap.visible { display: flex; }
+
+  .progress-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .progress-bar-fill.indeterminate {
+    width: 40%;
+    animation: slide 1.2s ease-in-out infinite;
+  }
+  @keyframes slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* ── Log ── */
+  .log {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.7;
+    flex: 1;
+    overflow-y: auto;
+    max-height: 80px;
+    padding-right: 4px;
+  }
+  .log::-webkit-scrollbar { width: 3px; }
+  .log::-webkit-scrollbar-track { background: transparent; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .log-line { display: flex; gap: 8px; }
+  .log-line .ts { color: #444c56; flex-shrink: 0; }
+  .log-line .msg { color: var(--muted); }
+  .log-line.ok  .msg { color: var(--success); }
+  .log-line.err .msg { color: var(--danger); }
+  .log-line.hi  .msg { color: var(--accent); }
+
+  /* ── Footer / Action button ── */
+  footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn-main {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 7px;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-main:hover:not(:disabled) { background: var(--accent2); }
+  .btn-main:active:not(:disabled) { transform: scale(0.99); }
+  .btn-main:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-main.working {
+    background: #1c2128;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  /* ── Warning banner ── */
+  .warning {
+    display: none;
+    background: rgba(248, 81, 73, 0.08);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--danger);
+    line-height: 1.5;
+  }
+  .warning.visible { display: block; }
+
+  /* ── Fade-in ── */
+  .card { animation: fadein 0.3s ease both; }
+  .card:nth-child(2) { animation-delay: 0.05s; }
+  .card:nth-child(3) { animation-delay: 0.1s; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"></div>
+  <div class="header-text">
+    <h1>FPP-OS USB Flasher</h1>
+    <div class="version-tag" id="headerVersion">Checking for updates...</div>
+  </div>
+  <div class="status-dot loading" id="statusDot" style="margin-left:auto"></div>
+</header>
+
+<main>
+
+  <!-- Release info -->
+  <div class="card">
+    <div class="card-label">Latest Release</div>
+    <div class="release-row">
+      <div class="release-badge" id="releaseVersion">—</div>
+      <div class="release-meta" id="releaseMeta">Fetching release info...</div>
+    </div>
+  </div>
+
+  <!-- Drive selector -->
+  <div class="card">
+    <div class="card-label">Target USB Drive</div>
+    <div class="drive-row">
+      <select id="driveSelect">
+        <option value="">Scanning for drives...</option>
+      </select>
+      <button class="btn-icon" id="refreshDrives" title="Refresh drives">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+    </div>
+    <div class="warning" id="driveWarning">
+      ⚠ All data on the selected drive will be permanently erased. Make sure you have selected the correct drive.
+    </div>
+  </div>
+
+  <!-- Progress + log -->
+  <div class="card" style="flex:1; display:flex; flex-direction:column; gap:12px; min-height:0">
+    <div class="card-label">Activity</div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progressText">—</span>
+        <span id="progressPct"></span>
+      </div>
+    </div>
+
+    <div class="log" id="log">
+      <div class="log-line"><span class="ts">--:--:--</span><span class="msg">Ready.</span></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <button class="btn-main" id="mainBtn" disabled>Flash to USB</button>
+</footer>
+
+<script>
+  // ── State ────────────────────────────────────────────────────────────────────
+  let releaseInfo   = null
+  let selectedDrive = null
+  let isoLocalPath  = null
+  let phase         = 'idle'   // idle | downloading | flashing | done | error
+
+  const os = navigator.platform.toLowerCase().includes('mac') ? 'mac'
+           : navigator.platform.toLowerCase().includes('win') ? 'win'
+           : 'linux'
+
+  // ── Element refs ─────────────────────────────────────────────────────────────
+  const el = {
+    statusDot:     document.getElementById('statusDot'),
+    headerVersion: document.getElementById('headerVersion'),
+    releaseVersion:document.getElementById('releaseVersion'),
+    releaseMeta:   document.getElementById('releaseMeta'),
+    driveSelect:   document.getElementById('driveSelect'),
+    refreshDrives: document.getElementById('refreshDrives'),
+    driveWarning:  document.getElementById('driveWarning'),
+    progressWrap:  document.getElementById('progressWrap'),
+    progressFill:  document.getElementById('progressFill'),
+    progressText:  document.getElementById('progressText'),
+    progressPct:   document.getElementById('progressPct'),
+    log:           document.getElementById('log'),
+    mainBtn:       document.getElementById('mainBtn'),
+  }
+
+  // ── Logging ──────────────────────────────────────────────────────────────────
+  function log(msg, type = '') {
+    const now = new Date()
+    const ts  = now.toTimeString().slice(0, 8)
+    const line = document.createElement('div')
+    line.className = `log-line ${type}`
+    line.innerHTML = `<span class="ts">${ts}</span><span class="msg">${msg}</span>`
+    el.log.appendChild(line)
+    el.log.scrollTop = el.log.scrollHeight
+  }
+
+  // ── Progress ─────────────────────────────────────────────────────────────────
+  function setProgress(pct, label) {
+    el.progressWrap.classList.add('visible')
+    el.progressFill.classList.remove('indeterminate')
+    el.progressFill.style.width = `${pct}%`
+    el.progressText.textContent = label || ''
+    el.progressPct.textContent  = pct != null ? `${pct}%` : ''
+  }
+
+  function setIndeterminate(label) {
+    el.progressWrap.classList.add('visible')
+    el.progressFill.classList.add('indeterminate')
+    el.progressText.textContent = label || ''
+    el.progressPct.textContent  = ''
+  }
+
+  function hideProgress() {
+    el.progressWrap.classList.remove('visible')
+    el.progressFill.classList.remove('indeterminate')
+    el.progressFill.style.width = '0%'
+  }
+
+  // ── Format bytes ─────────────────────────────────────────────────────────────
+  function fmt(bytes) {
+    if (!bytes) return ''
+    const gb = bytes / 1024 / 1024 / 1024
+    return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`
+  }
+
+  // ── ISO download path ─────────────────────────────────────────────────────────
+  function getIsoPath(name) {
+    // Electron exposes process via contextBridge if needed; use temp-ish location
+    return (window.__dirname || '') + (os === 'win' ? '\\' : '/') + (name || 'fpp-os.iso')
+  }
+
+  // ── Load release info ─────────────────────────────────────────────────────────
+  async function loadRelease() {
+    el.statusDot.className = 'status-dot loading'
+    log('Fetching latest release info...')
+    try {
+      releaseInfo = await window.fpp.getLatestRelease()
+      if (!releaseInfo || !releaseInfo.isoUrl) throw new Error('No ISO asset found in release')
+
+      el.releaseVersion.textContent  = releaseInfo.version || '—'
+      el.headerVersion.textContent   = `v${releaseInfo.version}`
+      el.releaseMeta.innerHTML       = `ISO <span>${releaseInfo.isoName}</span>&nbsp;&nbsp;·&nbsp;&nbsp;${fmt(releaseInfo.isoSize)}`
+      el.statusDot.className         = 'status-dot ok'
+      isoLocalPath = getIsoPath(releaseInfo.isoName)
+      log(`Found release ${releaseInfo.version} — ${releaseInfo.isoName}`, 'ok')
+      updateButton()
+    } catch (e) {
+      el.releaseMeta.textContent  = 'Failed to fetch release info'
+      el.statusDot.className      = 'status-dot error'
+      log(`Error fetching release: ${e.message}`, 'err')
+    }
+  }
+
+  // ── Load drives ───────────────────────────────────────────────────────────────
+  async function loadDrives() {
+    el.driveSelect.innerHTML = '<option value="">Scanning...</option>'
+    el.driveWarning.classList.remove('visible')
+    try {
+      const drives = await window.fpp.listDrives()
+      el.driveSelect.innerHTML = ''
+      if (!drives || drives.length === 0) {
+        el.driveSelect.innerHTML = '<option value="">No removable drives found</option>'
+        selectedDrive = null
+      } else {
+        const placeholder = document.createElement('option')
+        placeholder.value = ''
+        placeholder.textContent = '— Select a USB drive —'
+        el.driveSelect.appendChild(placeholder)
+        drives.forEach(d => {
+          const opt = document.createElement('option')
+          opt.value = d.device
+          opt.textContent = d.displayName
+          opt.dataset.drive = JSON.stringify(d)
+          el.driveSelect.appendChild(opt)
+        })
+        log(`Found ${drives.length} removable drive${drives.length !== 1 ? 's' : ''}`)
+      }
+    } catch (e) {
+      el.driveSelect.innerHTML = '<option value="">Error scanning drives</option>'
+      log(`Error listing drives: ${e.message}`, 'err')
+    }
+    updateButton()
+  }
+
+  // ── Drive selection change ────────────────────────────────────────────────────
+  el.driveSelect.addEventListener('change', () => {
+    const opt = el.driveSelect.selectedOptions[0]
+    if (opt && opt.dataset.drive) {
+      selectedDrive = JSON.parse(opt.dataset.drive)
+      el.driveWarning.classList.add('visible')
+      log(`Selected: ${selectedDrive.displayName}`, 'hi')
+    } else {
+      selectedDrive = null
+      el.driveWarning.classList.remove('visible')
+    }
+    updateButton()
+  })
+
+  el.refreshDrives.addEventListener('click', loadDrives)
+
+  // ── Download progress ─────────────────────────────────────────────────────────
+  window.fpp.onDownloadProgress(pct => {
+    setProgress(pct, 'Downloading ISO')
+  })
+
+  // ── Main button state ─────────────────────────────────────────────────────────
+  function updateButton() {
+    if (phase === 'downloading' || phase === 'flashing') return
+    const ready = releaseInfo && selectedDrive && phase !== 'done'
+    el.mainBtn.disabled  = !ready
+    el.mainBtn.textContent = phase === 'done' ? '✓ Done — Eject and boot!' : 'Flash to USB'
+    el.mainBtn.className = 'btn-main'
+  }
+
+  // ── Main action ───────────────────────────────────────────────────────────────
+  el.mainBtn.addEventListener('click', async () => {
+    if (!releaseInfo || !selectedDrive || phase === 'downloading' || phase === 'flashing') return
+
+    // ── Step 1: Download ──
+    phase = 'downloading'
+    el.mainBtn.disabled = true
+    el.mainBtn.textContent = 'Downloading...'
+    el.mainBtn.classList.add('working')
+    el.driveSelect.disabled = true
+    el.refreshDrives.style.pointerEvents = 'none'
+
+    log(`Downloading ${releaseInfo.isoName}...`, 'hi')
+    setIndeterminate('Starting download...')
+
+    try {
+      await window.fpp.downloadISO(releaseInfo.isoUrl, isoLocalPath)
+      setProgress(100, 'Download complete')
+      log('Download complete', 'ok')
+    } catch (e) {
+      phase = 'error'
+      log(`Download failed: ${e.message}`, 'err')
+      el.mainBtn.classList.remove('working')
+      el.mainBtn.textContent = 'Retry'
+      el.mainBtn.disabled = false
+      el.driveSelect.disabled = false
+      el.refreshDrives.style.pointerEvents = ''
+      phase = 'idle'
+      return
+    }
+
+    // ── Step 2: Flash ──
+    phase = 'flashing'
+    el.mainBtn.textContent = 'Flashing...'
+    log(`Writing to ${selectedDrive.device} — do not unplug...`, 'hi')
+    setIndeterminate(`Writing to ${selectedDrive.device}`)
+
+    try {
+      await window.fpp.flashDrive(isoLocalPath, selectedDrive.device)
+      phase = 'done'
+      setProgress(100, 'Flash complete')
+      el.statusDot.className = 'status-dot ok'
+      log('Flash complete! Eject the drive and boot from it.', 'ok')
+      el.mainBtn.classList.remove('working')
+      el.mainBtn.textContent = '✓ Done — Eject and boot!'
+      el.mainBtn.disabled = false
+      el.mainBtn.style.background = 'var(--success)'
+    } catch (e) {
+      phase = 'error'
+      log(`Flash failed: ${e.message}`, 'err')
+      el.statusDot.className = 'status-dot error'
+      el.mainBtn.classList.remove('working')
+      el.mainBtn.textContent = 'Retry'
+      el.mainBtn.disabled = false
+      el.driveSelect.disabled = false
+      el.refreshDrives.style.pointerEvents = ''
+      phase = 'idle'
+    }
+  })
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  ;(async () => {
+    await loadRelease()
+    await loadDrives()
+  })()
+</script>
+</body>
+</html>
