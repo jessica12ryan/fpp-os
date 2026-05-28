@@ -2,15 +2,14 @@
 name: Bug report
 about: Create a report to help us improve FPP-OS
 title: ''
-labels: ''
+labels: 'bug'
 assignees: ''
 
 ---
 
-**NOTE:** IF YOU DO NOT ATTACH YOUR LOG FILES, THEN THERE IS A HIGHER PROBABILITY THE ISSUE WON'T BE RESOLVED.  (Steps at end) 
 # Please answer the following:
 **FPP Version and Hardware**: 
-Example: *FPP-OS 1.0 running on (VM or PC Type)*
+Example: *FPP-OS 0.1.0 running on (VM or PC Type)*
 
 
 **Describe the bug and Steps to reproduce**: 
@@ -34,4 +33,6 @@ Please include the log files. To create the file:
 4. Click "zip" button.
 5. Attach to this ticket.
 
-If applicable, add screenshots to help explain your problem.
+If this is an install issue, attach screenshots or photos of the installation error if possible.
+
+Any screenshots or material to help explain your problem is welcome to be attached. Please do not upload sensitive information as it will be posted publicly on GitHub.
