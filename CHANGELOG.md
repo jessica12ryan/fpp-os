@@ -1,3 +1,9 @@
+## [0.1.6] - 2026-05-28
+
+- Minor updates and cleanup for known working pre-release (jessica12ryan)
+
+---
+
 ## [0.1.5] - 2026-05-28
 
 - Fixing issues with flasher (jessica12ryan)
