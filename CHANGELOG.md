@@ -1,3 +1,10 @@
+## [0.1.4] - 2026-05-28
+
+- Fix electron-builder repository and author fields (jessica12ryan)
+- more fixes for flasher (jessica12ryan)
+
+---
+
 ## [0.1.3] - 2026-05-28
 
 - Fix for compile issues with flasher (jessica12ryan)
