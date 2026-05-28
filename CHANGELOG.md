@@ -1,3 +1,10 @@
+## [0.1.1] - 2026-05-28
+
+- Attempt to compile our own USB flasher (jessica12ryan)
+- Cleanup old beta versions and minor updates to repo (jessica12ryan)
+
+---
+
 ## [0.1.0] - 2026-05-27
 
 - Fix release tag description and version bump logic (jessica12ryan)
