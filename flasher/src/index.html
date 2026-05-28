@@ -363,10 +363,6 @@
   let isoLocalPath  = null
   let phase         = 'idle'   // idle | downloading | flashing | done | error
 
-  const os = navigator.platform.toLowerCase().includes('mac') ? 'mac'
-           : navigator.platform.toLowerCase().includes('win') ? 'win'
-           : 'linux'
-
   // ── Element refs ─────────────────────────────────────────────────────────────
   const el = {
     statusDot:     document.getElementById('statusDot'),

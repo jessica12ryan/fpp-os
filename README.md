@@ -2,7 +2,7 @@
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
-This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM enviroments.
+This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM environments.
 
 FPP-OS currently uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
 

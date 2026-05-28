@@ -29,10 +29,14 @@ app.on('window-all-closed', () => app.quit())
 // ── Get latest release info from GitHub ──────────────────────────────────────
 ipcMain.handle('get-latest-release', async () => {
   return new Promise((resolve, reject) => {
-    const builtForVersion = process.env.VITE_FPP_VERSION || app.getVersion()
+    const builtForVersion = process.env.VITE_FPP_VERSION ||
+      (app.getVersion() !== '0.0.0' ? app.getVersion() : null)
+    const apiPath = builtForVersion
+      ? `/repos/jessica12ryan/fpp-os/releases/tags/${builtForVersion}`
+      : `/repos/jessica12ryan/fpp-os/releases/latest`
     const options = {
       hostname: 'api.github.com',
-      path: `/repos/jessica12ryan/fpp-os/releases/tags/${builtForVersion}`,
+      path: apiPath,
       headers: { 'User-Agent': 'fpp-os-usb-flasher' }
     }
     https.get(options, res => {
