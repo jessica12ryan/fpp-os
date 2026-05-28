@@ -1,7 +1,12 @@
 {
   "name": "fpp-os-usb-flasher",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "FPP-OS USB Flasher — download and flash FPP-OS to a USB drive",
+  "author": "jessica12ryan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessica12ryan/fpp-os.git"
+  },
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
