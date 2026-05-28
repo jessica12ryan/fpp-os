@@ -1,3 +1,20 @@
+## [0.1.5] - 2026-05-28
+
+- Fixing issues with flasher (jessica12ryan)
+- Convert index.js to HTML structure for USB flasher (jessica12ryan)
+- Update .gitignore with OS-specific entries (jessica12ryan)
+- Modify installation guide header with anchor link (jessica12ryan)
+- Reorganize README sections and add requirements (jessica12ryan)
+- Upgrade Node.js setup action to version 6 (jessica12ryan)
+- Merge pull request #3 - Bump tar from 6.2.1 to 7.5.15 in /flasher (jessica12ryan)
+- Exclude SD/FPP_Install.sh from Dependabot updates (jessica12ryan)
+- Bump tar in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #2 - Bump electron from 31.7.7 to 39.8.5 in /flasher (jessica12ryan)
+- Bump electron from 31.7.7 to 39.8.5 in /flasher (dependabot[bot])
+- Clean up Dependabot configuration (jessica12ryan)
+
+---
+
 ## [0.1.4] - 2026-05-28
 
 - Fix electron-builder repository and author fields (jessica12ryan)
