@@ -1,3 +1,12 @@
+## [0.1.2] - 2026-05-28
+
+- Add flasher package-lock.json (jessica12ryan)
+- Remove @serialport/list dependency from package.json (jessica12ryan)
+- More fixes for flasher (jessica12ryan)
+- Fixes for flasher (jessica12ryan)
+
+---
+
 ## [0.1.1] - 2026-05-28
 
 - Attempt to compile our own USB flasher (jessica12ryan)
