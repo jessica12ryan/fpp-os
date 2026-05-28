@@ -14,15 +14,24 @@ The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is s
 
 ---
 
-## 📥 Download
+## Global Requirements
 
-Grab the latest ISO from the [**Releases**](../../releases/latest) page.
+ - CPU: Must be 64-Bit
+ - Memory (RAM): Minimum 512MB for bare metal, Minimum 1GB for VM's (Recommended 2GB-4GB) depending on size of show
+ - Disk Size: Minimum 4GB (Recommended 16-64GB) depending on size of show
+ - Network: Must have an internet connection
+ - Physical machine or VM instance must be dedicated to FPP
+ - Hardware must be compatible with Debian 13
 
 ---
 
-## 🚀 Usage
+## 📥 Download (For Physical PC's)
 
-### Flash to USB
+Downloading the ISO is not required for Virtual Machines as the VM script will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
+
+### Manual ISO Download
+If you prefer to flash manually, grab the ISO directly from the
+[**Releases**](../../releases/latest) and follow the directions below:
 
 **Linux / macOS:**
 Use [Etcher](https://etcher.balena.io). Select the ISO, choose your USB drive, and write.
@@ -40,27 +49,7 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 
 ---
 
-### Default credentials
-
-| User   | Password |
-|--------|----------|
-| `root` | `falcon` |
-| `fpp`  | `falcon` |
-
----
-
-## Global Requirements
-
- - CPU: Must be 64-Bit
- - Memory (RAM): Minimum 512MB for bare metal, Minimum 1GB for VM's (Recommended 2GB-4GB) depending on size of show
- - Disk Size: Minimum 4GB (Recommended 16-64GB) depending on size of show
- - Network: Must have an internet connection
- - Physical machine or VM instance must be dedicated to FPP
- - Hardware must be compatible with Debian 13
-
----
-
-## Installation Guide
+## 🚀 Installation Guide
 
 This guide covers installation on:
 - [Physical PC (bare metal)](#1-installation-on-a-physical-pc-bare-metal)
@@ -242,12 +231,21 @@ iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp
 
 ---
 
-### Post-Installation
+## Post-Installation
 
 #### FPP Setup
 
 Browse to the web directory presented on your console screen after install, or open a webbrowser and browse to fpp.local
 Complete the FPP setup in your browser
+
+---
+
+## Default credentials
+
+| User   | Password |
+|--------|----------|
+| `root` | `falcon` |
+| `fpp`  | `falcon` |
 
 ---
 
