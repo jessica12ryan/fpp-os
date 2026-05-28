@@ -49,7 +49,7 @@ Use [Rufus](https://rufus.ie) or [Etcher](https://etcher.balena.io). Select the 
 
 ---
 
-## 🚀 Installation Guide
+## <a id="installation-guide"></a>🚀 Installation Guide
 
 This guide covers installation on:
 - [Physical PC (bare metal)](#1-installation-on-a-physical-pc-bare-metal)
