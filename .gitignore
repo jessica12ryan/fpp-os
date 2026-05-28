@@ -20,3 +20,8 @@ __pycache__/
 .idea/
 *.swp
 *.swo
+
+# USB Flasher
+flasher/node_modules/
+flasher/dist/
+flasher/package-lock.json

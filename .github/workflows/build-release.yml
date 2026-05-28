@@ -225,6 +225,19 @@ jobs:
           draft: false
           prerelease: false
 
+      - name: Verify flasher workflow exists before release is finalised
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/jessica12ryan/fpp-os/actions/workflows/build-flasher.yml")
+          if [[ "$STATUS" != "200" ]]; then
+            echo "WARNING: build-flasher.yml workflow not found (HTTP $STATUS)."
+            echo "The flasher will NOT be built for this release automatically."
+            echo "Add .github/workflows/build-flasher.yml to enable flasher builds."
+          else
+            echo "✓ build-flasher.yml found — flasher build will trigger automatically"
+          fi
+
       - name: Create ${{ steps.version.outputs.version }} branch
         run: |
           git config user.name "github-actions"

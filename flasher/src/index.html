@@ -1,0 +1,12 @@
+// On load — fetch latest version info
+const release = await window.fpp.getLatestRelease()
+
+// Refresh drive list
+const drives = await window.fpp.listDrives()
+
+// Download button
+await window.fpp.downloadISO(release.isoUrl, localDestPath)
+window.fpp.onDownloadProgress(pct => { /* update progress bar */ })
+
+// Flash button
+await window.fpp.flashDrive(localDestPath, selectedDrive.device)

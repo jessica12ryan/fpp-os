@@ -1,0 +1,148 @@
+name: Build FPP-OS USB Flasher
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to build flasher for (e.g. 0.1.0). Must match VERSION.txt exactly.'
+        required: true
+
+concurrency:
+  group: build-flasher-${{ github.event.release.tag_name || github.event.inputs.release_tag }}
+  cancel-in-progress: false  # never cancel a flasher build mid-flight
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            build_cmd: npx electron-builder --win
+            artifact_ext: exe
+          - os: macos-latest
+            build_cmd: npx electron-builder --mac
+            artifact_ext: dmg
+          - os: ubuntu-latest
+            build_cmd: npx electron-builder --linux
+            artifact_ext: AppImage
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash   # forces bash on all three platforms (Git Bash on Windows)
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # ── 1. Resolve which version we're building for ─────────────────────────
+      - name: Resolve release version
+        id: resolve
+        run: |
+          if [[ -n "${{ github.event.release.tag_name }}" ]]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.release_tag }}"
+          fi
+          VERSION="${VERSION#v}"   # strip leading 'v' if present
+          if [[ -z "$VERSION" ]]; then
+            echo "ERROR: Could not determine target version. No release tag and no manual input."
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Target version: $VERSION"
+
+      # ── 2. Verify VERSION.txt matches — halts if building for stale release ─
+      - name: Verify VERSION.txt matches release tag
+        run: |
+          REPO_VERSION=$(cat VERSION.txt | tr -d '[:space:]')
+          if [[ "$REPO_VERSION" != "${{ env.VERSION }}" ]]; then
+            echo "=========================================================="
+            echo "ERROR: Version mismatch — halting build."
+            echo "  Release tag : ${{ env.VERSION }}"
+            echo "  VERSION.txt : $REPO_VERSION"
+            echo ""
+            echo "This usually means the flasher is being triggered for an"
+            echo "old or partially-failed release. If you intentionally want"
+            echo "to rebuild for ${{ env.VERSION }}, first update VERSION.txt"
+            echo "to match, or re-run the full release workflow."
+            echo "=========================================================="
+            exit 1
+          fi
+          echo "✓ VERSION.txt matches release tag: ${{ env.VERSION }}"
+
+      # ── 3. Verify the release actually exists on GitHub ─────────────────────
+      - name: Verify release exists on GitHub
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/jessica12ryan/fpp-os/releases/tags/${{ env.VERSION }}")
+          if [[ "$HTTP_STATUS" != "200" ]]; then
+            echo "ERROR: Release ${{ env.VERSION }} not found on GitHub (HTTP $HTTP_STATUS)."
+            echo "The release must be published before the flasher can be built."
+            exit 1
+          fi
+          echo "✓ Release ${{ env.VERSION }} confirmed on GitHub"
+
+      # ── 4. Halt if this platform's binary already exists on the release ─────
+      - name: Check for existing binary on release
+        run: |
+          EXT="${{ matrix.artifact_ext }}"
+          EXISTING=$(curl -s \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/jessica12ryan/fpp-os/releases/tags/${{ env.VERSION }}" \
+            | grep -o "\"name\":\"[^\"]*\\.${EXT}\"" || true)
+          if [[ -n "$EXISTING" ]]; then
+            echo "=========================================================="
+            echo "ERROR: A .${EXT} flasher binary already exists for ${{ env.VERSION }}."
+            echo "Existing asset: $EXISTING"
+            echo ""
+            echo "Halting to prevent overwrite. To force a rebuild, manually"
+            echo "delete the existing asset from the GitHub release first."
+            echo "=========================================================="
+            exit 1
+          fi
+          echo "✓ No existing .${EXT} binary on release — safe to build"
+
+      # ── 5. Setup, sync version, build ────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: flasher/package-lock.json
+
+      - name: Install dependencies
+        working-directory: flasher
+        run: npm ci
+
+      - name: Sync package.json version to release version
+        working-directory: flasher
+        run: |
+          npm version "${{ env.VERSION }}" --no-git-tag-version --allow-same-version
+          echo "✓ package.json version set to $(node -p "require('./package.json').version")"
+
+      - name: Build flasher
+        working-directory: flasher
+        run: ${{ matrix.build_cmd }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_FPP_VERSION: ${{ env.VERSION }}
+
+      # ── 6. Upload to the release ──────────────────────────────────────────────
+      - name: Upload flasher to release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.VERSION }}
+          files: flasher/dist/*.${{ matrix.artifact_ext }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

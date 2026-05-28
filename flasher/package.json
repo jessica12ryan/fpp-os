@@ -1,0 +1,18 @@
+{
+  "name": "fpp-os-usb-flasher",
+  "version": "0.1.0",
+  "description": "FPP-OS USB Flasher — download and flash FPP-OS to a USB drive",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "drivelist": "^9.2.4",
+    "sudo-prompt": "^9.2.1"
+  }
+}
