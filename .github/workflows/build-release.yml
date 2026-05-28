@@ -238,6 +238,16 @@ jobs:
             echo "✓ build-flasher.yml found — flasher build will trigger automatically"
           fi
 
+      - name: Trigger flasher build
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/jessica12ryan/fpp-os/dispatches" \
+            -d "{\"event_type\":\"release-published\",\"client_payload\":{\"version\":\"${{ steps.version.outputs.version }}\"}}"
+          echo "✓ Flasher build triggered for version ${{ steps.version.outputs.version }}"
+
       - name: Create ${{ steps.version.outputs.version }} branch
         run: |
           git config user.name "github-actions"

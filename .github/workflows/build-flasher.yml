@@ -1,11 +1,11 @@
 name: Build FPP-OS USB Flasher
 
 on:
-  release:
-    types: [published]
+  repository_dispatch:
+    types: [release-published]
 
 concurrency:
-  group: build-flasher-${{ github.event.release.tag_name || github.event.inputs.release_tag }}
+  group: build-flasher-${{ github.event.client_payload.version }}
   cancel-in-progress: false  # never cancel a flasher build mid-flight
 
 jobs:
@@ -42,10 +42,10 @@ jobs:
       - name: Resolve release version
         id: resolve
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${{ github.event.client_payload.version }}"
           VERSION="${VERSION#v}"
           if [[ -z "$VERSION" ]]; then
-            echo "ERROR: Could not determine target version."
+            echo "ERROR: Could not determine target version from client_payload."
             exit 1
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
