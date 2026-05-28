@@ -1,3 +1,9 @@
+## [0.1.3] - 2026-05-28
+
+- Fix for compile issues with flasher (jessica12ryan)
+
+---
+
 ## [0.1.2] - 2026-05-28
 
 - Add flasher package-lock.json (jessica12ryan)
