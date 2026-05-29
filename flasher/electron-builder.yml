@@ -21,7 +21,7 @@ mac:
     - target: dmg
       arch: [x64, arm64]
   icon: build/icon.icns
-  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
+  artifactName: FPP-OS-USB-Flasher-${version}-${os}-${arch}.${ext}
 
 linux:
   target:

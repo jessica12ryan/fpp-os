@@ -30,11 +30,12 @@ Downloading the ISO is not required for Virtual Machines as the VM script will d
 ### FPP-OS USB Flasher (Recommended)
 The easiest way to get started. Automatically flashes the latest ISO to your USB drive in one click.
 
-| Platform | Download |
-|----------|---------|
-| Windows  | `FPP-OS-USB-Flasher-x.x.x-win.exe` |
-| macOS    | `FPP-OS-USB-Flasher-x.x.x-mac.dmg` |
-| Linux    | `FPP-OS-USB-Flasher-x.x.x-linux.AppImage` |
+| Platform         | Download                                  |
+|------------------|-------------------------------------------|
+| Windows          | `FPP-OS-USB-Flasher-x.x.x-win.exe`        |
+| macOS (Silicon)  | `FPP-OS-USB-Flasher-x.x.x-mac-arm64.dmg`  |
+| macOS (Intel)    | `FPP-OS-USB-Flasher-x.x.x-mac-x64.dmg`    |
+| Linux            | `FPP-OS-USB-Flasher-x.x.x-linux.AppImage` |
 
 Grab the latest flasher from the [**Releases**](../../releases/latest) page.
 
