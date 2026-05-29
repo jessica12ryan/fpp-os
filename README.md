@@ -2,13 +2,11 @@
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
-This repository automatically builds a bootable FPP-OS ISO that will automatically install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM environments.
+This repository automatically builds a bootable FPP-OS ISO that will automatically download and install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM environments.
 
 FPP-OS currently uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
 
 FPP-OS is not officially supported by the FalconChristmas/FPP team. All issues from this installation should be logged to THIS repo. We will test and confirm whether the issue is isolated to our repo, and recreate the ticket on the FPP repo if necessary. The FPP team will not respond to any issues from this installation.
-
-This ISO uses a network installer. You must have an internet connection to run and install the ISO.
 
 The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is set to UEFI, a gray screen will be seen during the OS install. If your BIOS is set to Legacy Boot, a blue screen will be seen during the OS install. Both work - but UEFI is preferred as it is modern and provides an extra level of security.
 
@@ -29,15 +27,14 @@ The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is s
 
 Downloading the ISO is not required for Virtual Machines as the VM script will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
 
-### FPP-OS Flasher (Recommended)
-The easiest way to get started. Downloads the latest ISO automatically and
-flashes it to your USB drive in one click.
+### FPP-OS USB Flasher (Recommended)
+The easiest way to get started. Automatically flashes the latest ISO to your USB drive in one click.
 
 | Platform | Download |
 |----------|---------|
-| Windows  | `FPP-OS-Flasher-Setup-x.x.x.exe` |
-| macOS    | `FPP-OS-Flasher-x.x.x.dmg` |
-| Linux    | `FPP-OS-Flasher-x.x.x.AppImage` |
+| Windows  | `FPP-OS-USB-Flasher-x.x.x-win.exe` |
+| macOS    | `FPP-OS-USB-Flasher-x.x.x-mac.dmg` |
+| Linux    | `FPP-OS-USB-Flasher-x.x.x-linux.AppImage` |
 
 Grab the latest flasher from the [**Releases**](../../releases/latest) page.
 

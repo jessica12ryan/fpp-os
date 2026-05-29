@@ -14,15 +14,18 @@ win:
     - target: nsis
       arch: [x64]
   icon: build/icon.ico
+  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
 
 mac:
   target:
     - target: dmg
       arch: [x64, arm64]
   icon: build/icon.icns
+  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
 
 linux:
   target:
     - target: AppImage
       arch: [x64]
   icon: build/icon.png
+  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
