@@ -1,3 +1,13 @@
+## [0.1.7] - 2026-05-30
+
+- Update FPP Flasher to flash both FPP-OS ISO and FPP SD cards (jessica12ryan)
+- Add icon images (jessica12ryan)
+- Update USB Flasher filenames (jessica12ryan)
+- Update USB Flasher filenames (jessica12ryan)
+- Minor tweaks to USB flasher, remove some unnecessary code, and fix typos (jessica12ryan)
+
+---
+
 ## [0.1.6] - 2026-05-28
 
 - Minor updates and cleanup for known working pre-release (jessica12ryan)
