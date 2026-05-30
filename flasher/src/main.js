@@ -4,6 +4,7 @@ const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
 const { execSync } = require('child_process')
+const ghToken = process.env.VITE_GH_READ_TOKEN || null
 
 let mainWindow
 
@@ -36,8 +37,12 @@ ipcMain.handle('get-latest-release', async () => {
       : `/repos/jessica12ryan/fpp-os/releases/latest`
     const options = {
       hostname: 'api.github.com',
-      path: apiPath,
-      headers: { 'User-Agent': 'fpp-flasher' }
+      path: `/repos/jessica12ryan/fpp-os/releases/tags/${builtForVersion}`,
+      headers: {
+        'User-Agent': 'fpp-flasher',
+        'Accept': 'application/vnd.github.v3+json',
+        ...(ghToken && { 'Authorization': `Bearer ${ghToken}` })
+      }
     }
     https.get(options, res => {
       let data = ''
@@ -64,7 +69,11 @@ ipcMain.handle('get-fpp-release', async () => {
     const options = {
       hostname: 'api.github.com',
       path: '/repos/FalconChristmas/fpp/releases/latest',
-      headers: { 'User-Agent': 'fpp-flasher' }
+      headers: {
+        'User-Agent': 'fpp-flasher',
+        'Accept': 'application/vnd.github.v3+json',
+        ...(ghToken && { 'Authorization': `Bearer ${ghToken}` })
+      }
     }
     https.get(options, res => {
       let data = ''
