@@ -44,7 +44,6 @@
     -webkit-app-region: drag;
     flex-shrink: 0;
   }
-
   .logo {
     width: 28px; height: 28px;
     background: var(--accent);
@@ -53,271 +52,153 @@
     animation: pulse-logo 3s ease-in-out infinite;
   }
   @keyframes pulse-logo { 0%,100%{opacity:1} 50%{opacity:.7} }
-
-  .header-text h1 {
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-  }
-  .header-text .sub {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--accent);
-    letter-spacing: .05em;
-  }
-
+  .header-text h1 { font-size: 14px; font-weight: 700; letter-spacing:.08em; text-transform:uppercase; }
+  .header-text .sub { font-family:var(--mono); font-size:10px; color:var(--accent); letter-spacing:.05em; }
   .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    flex-shrink: 0;
-    margin-left: auto;
-    transition: background .3s;
+    width:8px; height:8px; border-radius:50%; background:var(--muted);
+    flex-shrink:0; margin-left:auto; transition:background .3s;
   }
-  .status-dot.ok      { background: var(--success); box-shadow: 0 0 6px var(--success); }
-  .status-dot.loading { background: var(--accent); animation: blink .8s step-end infinite; }
-  .status-dot.error   { background: var(--danger); }
+  .status-dot.ok      { background:var(--success); box-shadow:0 0 6px var(--success); }
+  .status-dot.loading { background:var(--accent); animation:blink .8s step-end infinite; }
+  .status-dot.error   { background:var(--danger); }
   @keyframes blink { 50%{opacity:0} }
 
   /* ── Mode tabs ── */
   .mode-tabs {
-    display: flex;
-    gap: 6px;
-    padding: 10px 24px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    -webkit-app-region: no-drag;
+    display:flex; gap:6px; padding:10px 24px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0; -webkit-app-region:no-drag;
   }
-
   .mode-tab {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--sans);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .05em;
-    cursor: pointer;
-    transition: all .15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
+    flex:1; padding:8px 12px;
+    border:1px solid var(--border); border-radius:6px;
+    background:transparent; color:var(--muted);
+    font-family:var(--sans); font-size:12px; font-weight:600;
+    letter-spacing:.05em; cursor:pointer; transition:all .15s;
+    display:flex; align-items:center; justify-content:center; gap:7px;
   }
-  .mode-tab svg { flex-shrink: 0; }
-  .mode-tab:hover { color: var(--text); border-color: var(--accent); }
-  .mode-tab.active {
-    background: rgba(249,115,22,.1);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .mode-tab svg { flex-shrink:0; }
+  .mode-tab:hover { color:var(--text); border-color:var(--accent); }
+  .mode-tab.active { background:rgba(249,115,22,.1); border-color:var(--accent); color:var(--accent); }
 
   /* ── Main ── */
   main {
-    flex: 1;
-    padding: 14px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow: hidden;
-    min-height: 0;
+    flex:1; padding:14px 24px;
+    display:flex; flex-direction:column; gap:12px;
+    overflow:hidden; min-height:0;
   }
+
+  /* ── Tab panels ── */
+  .tab-panel { display:flex; flex-direction:column; gap:12px; flex:1; min-height:0; }
+  .tab-panel.hidden { display:none; }
 
   /* ── Cards ── */
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    animation: fadein .25s ease both;
-    flex-shrink: 0;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:14px; flex-shrink:0;
   }
-  .card.flex-grow { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-  @keyframes fadein { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
-
+  .card.flex-grow { flex:1; display:flex; flex-direction:column; gap:10px; min-height:0; }
   .card-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
+    font-size:10px; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:8px;
   }
 
   /* ── Release info ── */
-  .release-row { display: flex; align-items: center; gap: 12px; }
-  .release-badge {
-    font-family: var(--mono);
-    font-size: 18px;
-    color: var(--accent);
-  }
-  .release-meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
-  .release-meta span { color: var(--text); }
+  .release-row { display:flex; align-items:center; gap:12px; }
+  .release-badge { font-family:var(--mono); font-size:18px; color:var(--accent); }
+  .release-meta { font-size:12px; color:var(--muted); line-height:1.6; }
+  .release-meta span { color:var(--text); }
 
-  /* ── Platform grid (SD mode) ── */
-  .platform-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
+  /* ── Platform grid ── */
+  .platform-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
   .platform-btn {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    color: var(--muted);
-    padding: 10px 8px;
-    cursor: pointer;
-    font-family: var(--sans);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-align: center;
-    transition: all .15s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
+    background:var(--bg); border:1px solid var(--border); border-radius:7px;
+    color:var(--muted); padding:10px 8px; cursor:pointer;
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    letter-spacing:.04em; text-align:center; transition:all .15s;
+    display:flex; flex-direction:column; align-items:center; gap:5px;
   }
-  .platform-btn .icon { font-size: 18px; }
-  .platform-btn:hover { color: var(--text); border-color: var(--accent); }
-  .platform-btn.active {
-    background: rgba(249,115,22,.1);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .platform-btn .icon { font-size:18px; }
+  .platform-btn:hover { color:var(--text); border-color:var(--accent); }
+  .platform-btn.active { background:rgba(249,115,22,.1); border-color:var(--accent); color:var(--accent); }
+  .variant-row { display:flex; flex-direction:column; gap:6px; }
+  .variant-label { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
 
-  .variant-row { display: flex; flex-direction: column; gap: 6px; }
-  .variant-label { font-size: 10px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-
-  /* ── Selects ── */
+  /* ── Drive selector ── */
+  .drive-row { display:flex; gap:8px; align-items:center; }
   select {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 13px;
-    padding: 8px 30px 8px 10px;
-    outline: none;
-    cursor: pointer;
-    transition: border-color .2s;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    width: 100%;
+    flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-family:var(--sans); font-size:13px;
+    padding:8px 30px 8px 10px; outline:none; cursor:pointer;
+    transition:border-color .2s; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center; width:100%;
   }
-  select:focus { border-color: var(--accent); }
-  select option { background: var(--surface); }
-
-  .drive-row { display: flex; gap: 8px; align-items: center; }
+  select:focus { border-color:var(--accent); }
+  select option { background:var(--surface); }
   .btn-icon {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--muted);
-    width: 36px; height: 36px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    transition: color .2s, border-color .2s;
-    flex-shrink: 0;
+    background:var(--bg); border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); width:36px; height:36px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:color .2s, border-color .2s; flex-shrink:0;
   }
-  .btn-icon:hover { color: var(--text); border-color: var(--accent); }
-
-  /* ── Warning ── */
+  .btn-icon:hover { color:var(--text); border-color:var(--accent); }
   .warning {
-    display: none;
-    background: rgba(248,81,73,.08);
-    border: 1px solid rgba(248,81,73,.3);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 12px;
-    color: var(--danger);
-    line-height: 1.5;
-    margin-top: 8px;
+    display:none; background:rgba(248,81,73,.08);
+    border:1px solid rgba(248,81,73,.3); border-radius:6px;
+    padding:8px 12px; font-size:12px; color:var(--danger);
+    line-height:1.5; margin-top:8px;
   }
-  .warning.visible { display: block; }
 
   /* ── Progress ── */
-  .progress-wrap { display: none; flex-direction: column; gap: 6px; }
-  .progress-wrap.visible { display: flex; }
-  .progress-bar-track { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-wrap { display:none; flex-direction:column; gap:6px; flex-shrink:0; }
+  .progress-wrap.visible { display:flex; }
+  .progress-bar-track { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
   .progress-bar-fill {
-    height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    border-radius: 2px;
-    transition: width .3s ease;
+    height:100%; width:0%;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    border-radius:2px; transition:width .3s ease;
   }
-  .progress-bar-fill.indeterminate {
-    width: 40%;
-    animation: slide 1.2s ease-in-out infinite;
-  }
+  .progress-bar-fill.indeterminate { width:40%; animation:slide 1.2s ease-in-out infinite; }
   @keyframes slide { 0%{transform:translateX(-100%)} 100%{transform:translateX(350%)} }
   .progress-label {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    display: flex;
-    justify-content: space-between;
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    display:flex; justify-content:space-between;
   }
 
   /* ── Log ── */
   .log {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.7;
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-    padding-right: 4px;
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    line-height:1.7; flex:1; overflow-y:auto; min-height:0; padding-right:4px;
   }
-  .log::-webkit-scrollbar { width: 3px; }
-  .log::-webkit-scrollbar-track { background: transparent; }
-  .log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .log-line { display: flex; gap: 8px; }
-  .log-line .ts  { color: #444c56; flex-shrink: 0; }
-  .log-line .msg { color: var(--muted); }
-  .log-line.ok   .msg { color: var(--success); }
-  .log-line.err  .msg { color: var(--danger); }
-  .log-line.hi   .msg { color: var(--accent); }
+  .log::-webkit-scrollbar { width:3px; }
+  .log::-webkit-scrollbar-track { background:transparent; }
+  .log::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .log-line { display:flex; gap:8px; }
+  .log-line .ts  { color:#444c56; flex-shrink:0; }
+  .log-line .msg { color:var(--muted); }
+  .log-line.ok  .msg { color:var(--success); }
+  .log-line.err .msg { color:var(--danger); }
+  .log-line.hi  .msg { color:var(--accent); }
+
+  /* ── Drive card (shared, always visible) ── */
+  .drive-card { flex-shrink:0; }
 
   /* ── Footer ── */
-  footer {
-    padding: 12px 24px;
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-  }
+  footer { padding:12px 24px; border-top:1px solid var(--border); flex-shrink:0; }
   .btn-main {
-    width: 100%;
-    padding: 11px;
-    border: none;
-    border-radius: 7px;
-    background: var(--accent);
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background .2s, opacity .2s, transform .1s;
+    width:100%; padding:11px; border:none; border-radius:7px;
+    background:var(--accent); color:#fff;
+    font-family:var(--sans); font-size:13px; font-weight:700;
+    letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+    transition:background .2s, opacity .2s, transform .1s;
   }
-  .btn-main:hover:not(:disabled) { background: var(--accent2); }
-  .btn-main:active:not(:disabled) { transform: scale(.99); }
-  .btn-main:disabled { opacity: .35; cursor: not-allowed; }
+  .btn-main:hover:not(:disabled) { background:var(--accent2); }
+  .btn-main:active:not(:disabled) { transform:scale(.99); }
+  .btn-main:disabled { opacity:.35; cursor:not-allowed; }
   .btn-main.working {
-    background: #1c2128;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    cursor: not-allowed;
+    background:#1c2128; border:1px solid var(--border);
+    color:var(--muted); cursor:not-allowed;
   }
 </style>
 </head>
@@ -332,7 +213,6 @@
   <div class="status-dot loading" id="statusDot"></div>
 </header>
 
-<!-- ── Mode tabs ── -->
 <div class="mode-tabs">
   <button class="mode-tab active" id="tabUSB" onclick="setMode('usb')">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -350,78 +230,103 @@
 
 <main>
 
-  <!-- ── USB mode: release info ── -->
-  <div class="card" id="cardUSBRelease">
-    <div class="card-label">FPP-OS Release</div>
-    <div class="release-row">
-      <div class="release-badge" id="usbVersion">—</div>
-      <div class="release-meta" id="usbMeta">Fetching release info...</div>
-    </div>
-  </div>
+  <!-- ══════════════════ USB PANEL ══════════════════ -->
+  <div class="tab-panel" id="panelUSB">
 
-  <!-- ── SD mode: platform + variant picker ── -->
-  <div class="card" id="cardSDRelease" style="display:none">
-    <div class="card-label">FPP Release &amp; Platform</div>
-    <div class="release-row" style="margin-bottom:12px">
-      <div class="release-badge" id="sdVersion">—</div>
-      <div class="release-meta" id="sdMeta">Fetching FPP release...</div>
-    </div>
-    <div class="platform-grid">
-      <button class="platform-btn active" id="plPi" onclick="setPlatform('pi')">
-        <span class="icon">🍓</span>
-        Raspberry Pi
-      </button>
-      <button class="platform-btn" id="plBB" onclick="setPlatform('bb')">
-        <span class="icon">🦴</span>
-        BeagleBone
-      </button>
-      <button class="platform-btn" id="plBB64" onclick="setPlatform('bb64')">
-        <span class="icon">🦴</span>
-        BB64
-      </button>
-    </div>
-    <div class="variant-row">
-      <div class="variant-label">Image</div>
-      <select id="variantSelect">
-        <option value="">— Loading images... —</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- ── Drive selector (shared) ── -->
-  <div class="card" id="cardDrive">
-    <div class="card-label" id="driveLabel">Target USB Drive</div>
-    <div class="drive-row">
-      <select id="driveSelect">
-        <option value="">Scanning for drives...</option>
-      </select>
-      <button class="btn-icon" id="refreshDrives" title="Refresh drives">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-      </button>
-    </div>
-    <div class="warning visible" id="driveWarning" style="display:none">
-      ⚠ All data on the selected drive will be permanently erased. Make sure you have selected the correct drive.
-    </div>
-  </div>
-
-  <!-- ── Activity ── -->
-  <div class="card flex-grow">
-    <div class="card-label">Activity</div>
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progressFill"></div>
-      </div>
-      <div class="progress-label">
-        <span id="progressText">—</span>
-        <span id="progressPct"></span>
+    <div class="card">
+      <div class="card-label">FPP-OS Release</div>
+      <div class="release-row">
+        <div class="release-badge" id="usbVersion">—</div>
+        <div class="release-meta" id="usbMeta">Fetching release info...</div>
       </div>
     </div>
-    <div class="log" id="log">
-      <div class="log-line"><span class="ts">--:--:--</span><span class="msg">Ready.</span></div>
+
+    <!-- USB drive selector -->
+    <div class="card drive-card">
+      <div class="card-label">Target USB Drive</div>
+      <div class="drive-row">
+        <select id="usbDriveSelect"><option value="">Scanning for drives...</option></select>
+        <button class="btn-icon" id="usbRefreshDrives" title="Refresh drives">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+      <div class="warning" id="usbDriveWarning">
+        ⚠ All data on the selected drive will be permanently erased. Make sure you have selected the correct drive.
+      </div>
     </div>
+
+    <!-- USB activity -->
+    <div class="card flex-grow">
+      <div class="card-label">Activity</div>
+      <div class="progress-wrap" id="usbProgressWrap">
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="usbProgressFill"></div></div>
+        <div class="progress-label"><span id="usbProgressText">—</span><span id="usbProgressPct"></span></div>
+      </div>
+      <div class="log" id="usbLog">
+        <div class="log-line"><span class="ts">--:--:--</span><span class="msg">Ready.</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════ SD PANEL ══════════════════ -->
+  <div class="tab-panel hidden" id="panelSD">
+
+    <div class="card">
+      <div class="card-label">FPP Release &amp; Platform</div>
+      <div class="release-row" style="margin-bottom:12px">
+        <div class="release-badge" id="sdVersion">—</div>
+        <div class="release-meta" id="sdMeta">Switch to this tab to load FPP releases...</div>
+      </div>
+      <div class="platform-grid">
+        <button class="platform-btn active" id="plPi" onclick="setPlatform('pi')">
+          <span class="icon">🍓</span>Raspberry Pi
+        </button>
+        <button class="platform-btn" id="plBB" onclick="setPlatform('bb')">
+          <span class="icon">🦴</span>BeagleBone
+        </button>
+        <button class="platform-btn" id="plBB64" onclick="setPlatform('bb64')">
+          <span class="icon">🦴</span>BB64
+        </button>
+      </div>
+      <div class="variant-row">
+        <div class="variant-label">Image</div>
+        <select id="variantSelect"><option value="">— Loading images... —</option></select>
+      </div>
+    </div>
+
+    <!-- SD drive selector -->
+    <div class="card drive-card">
+      <div class="card-label">Target SD Card</div>
+      <div class="drive-row">
+        <select id="sdDriveSelect"><option value="">Scanning for drives...</option></select>
+        <button class="btn-icon" id="sdRefreshDrives" title="Refresh drives">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
+      </div>
+      <div class="warning" id="sdDriveWarning">
+        ⚠ All data on the selected drive will be permanently erased. Make sure you have selected the correct drive.
+      </div>
+    </div>
+
+    <!-- SD activity -->
+    <div class="card flex-grow">
+      <div class="card-label">Activity</div>
+      <div class="progress-wrap" id="sdProgressWrap">
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="sdProgressFill"></div></div>
+        <div class="progress-label"><span id="sdProgressText">—</span><span id="sdProgressPct"></span></div>
+      </div>
+      <div class="log" id="sdLog">
+        <div class="log-line"><span class="ts">--:--:--</span><span class="msg">Ready.</span></div>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -432,72 +337,123 @@
 
 <script>
   // ── State ─────────────────────────────────────────────────────────────────────
-  let mode          = 'usb'          // 'usb' | 'sd'
+  let mode            = 'usb'
   let currentPlatform = 'pi'
-  let usbRelease    = null           // { version, isoUrl, isoName, isoSize }
-  let sdRelease     = null           // { version, images: [...] }
-  let selectedDrive = null
-  let imageLocalPath = null
-  let phase         = 'idle'         // idle | downloading | flashing | done | error
+  let usbRelease      = null
+  let sdRelease       = null
+  let usbDrive        = null
+  let sdDrive         = null
+  let imageLocalPath  = null
+  let phase           = 'idle'
 
   // ── Elements ──────────────────────────────────────────────────────────────────
   const el = {
-    statusDot:    document.getElementById('statusDot'),
-    headerSub:    document.getElementById('headerSub'),
-    tabUSB:       document.getElementById('tabUSB'),
-    tabSD:        document.getElementById('tabSD'),
-    cardUSB:      document.getElementById('cardUSBRelease'),
-    cardSD:       document.getElementById('cardSDRelease'),
-    usbVersion:   document.getElementById('usbVersion'),
-    usbMeta:      document.getElementById('usbMeta'),
-    sdVersion:    document.getElementById('sdVersion'),
-    sdMeta:       document.getElementById('sdMeta'),
-    plPi:         document.getElementById('plPi'),
-    plBB:         document.getElementById('plBB'),
-    plBB64:       document.getElementById('plBB64'),
-    variantSelect:document.getElementById('variantSelect'),
-    driveLabel:   document.getElementById('driveLabel'),
-    driveSelect:  document.getElementById('driveSelect'),
-    refreshDrives:document.getElementById('refreshDrives'),
-    driveWarning: document.getElementById('driveWarning'),
-    progressWrap: document.getElementById('progressWrap'),
-    progressFill: document.getElementById('progressFill'),
-    progressText: document.getElementById('progressText'),
-    progressPct:  document.getElementById('progressPct'),
-    log:          document.getElementById('log'),
-    mainBtn:      document.getElementById('mainBtn'),
+    statusDot:       document.getElementById('statusDot'),
+    headerSub:       document.getElementById('headerSub'),
+    tabUSB:          document.getElementById('tabUSB'),
+    tabSD:           document.getElementById('tabSD'),
+    panelUSB:        document.getElementById('panelUSB'),
+    panelSD:         document.getElementById('panelSD'),
+    // USB
+    usbVersion:      document.getElementById('usbVersion'),
+    usbMeta:         document.getElementById('usbMeta'),
+    usbDriveSelect:  document.getElementById('usbDriveSelect'),
+    usbRefreshDrives:document.getElementById('usbRefreshDrives'),
+    usbDriveWarning: document.getElementById('usbDriveWarning'),
+    usbProgressWrap: document.getElementById('usbProgressWrap'),
+    usbProgressFill: document.getElementById('usbProgressFill'),
+    usbProgressText: document.getElementById('usbProgressText'),
+    usbProgressPct:  document.getElementById('usbProgressPct'),
+    usbLog:          document.getElementById('usbLog'),
+    // SD
+    sdVersion:       document.getElementById('sdVersion'),
+    sdMeta:          document.getElementById('sdMeta'),
+    plPi:            document.getElementById('plPi'),
+    plBB:            document.getElementById('plBB'),
+    plBB64:          document.getElementById('plBB64'),
+    variantSelect:   document.getElementById('variantSelect'),
+    sdDriveSelect:   document.getElementById('sdDriveSelect'),
+    sdRefreshDrives: document.getElementById('sdRefreshDrives'),
+    sdDriveWarning:  document.getElementById('sdDriveWarning'),
+    sdProgressWrap:  document.getElementById('sdProgressWrap'),
+    sdProgressFill:  document.getElementById('sdProgressFill'),
+    sdProgressText:  document.getElementById('sdProgressText'),
+    sdProgressPct:   document.getElementById('sdProgressPct'),
+    sdLog:           document.getElementById('sdLog'),
+    // Shared
+    mainBtn:         document.getElementById('mainBtn'),
   }
 
-  // ── Logging ───────────────────────────────────────────────────────────────────
-  function log(msg, type = '') {
+  // ── Logging — writes to the active mode's log ─────────────────────────────────
+  function appendLog(logEl, msg, type) {
     const ts   = new Date().toTimeString().slice(0, 8)
     const line = document.createElement('div')
     line.className = `log-line ${type}`
     line.innerHTML = `<span class="ts">${ts}</span><span class="msg">${msg}</span>`
-    el.log.appendChild(line)
-    el.log.scrollTop = el.log.scrollHeight
+    logEl.appendChild(line)
+    logEl.scrollTop = logEl.scrollHeight
+  }
+  function log(msg, type = '') {
+    appendLog(mode === 'usb' ? el.usbLog : el.sdLog, msg, type)
   }
 
-  // ── Progress ──────────────────────────────────────────────────────────────────
+  // ── Progress — writes to the active mode's progress ───────────────────────────
+  function activeProgress() {
+    return mode === 'usb'
+      ? { wrap: el.usbProgressWrap, fill: el.usbProgressFill, text: el.usbProgressText, pct: el.usbProgressPct }
+      : { wrap: el.sdProgressWrap,  fill: el.sdProgressFill,  text: el.sdProgressText,  pct: el.sdProgressPct  }
+  }
   function setProgress(pct, label) {
-    el.progressWrap.classList.add('visible')
-    el.progressFill.classList.remove('indeterminate')
-    el.progressFill.style.width = `${pct}%`
-    el.progressText.textContent = label || ''
-    el.progressPct.textContent  = pct != null ? `${pct}%` : ''
+    const p = activeProgress()
+    p.wrap.classList.add('visible')
+    p.fill.classList.remove('indeterminate')
+    p.fill.style.width   = `${pct}%`
+    p.text.textContent   = label || ''
+    p.pct.textContent    = pct != null ? `${pct}%` : ''
   }
   function setIndeterminate(label) {
-    el.progressWrap.classList.add('visible')
-    el.progressFill.classList.add('indeterminate')
-    el.progressText.textContent = label || ''
-    el.progressPct.textContent  = ''
+    const p = activeProgress()
+    p.wrap.classList.add('visible')
+    p.fill.classList.add('indeterminate')
+    p.text.textContent = label || ''
+    p.pct.textContent  = ''
   }
 
-  // ── Format bytes ──────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────────
   function fmt(bytes) {
     if (!bytes) return ''
     const gb = bytes / 1024 / 1024 / 1024
     return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`
+  }
+
+  function populateDriveSelect(selectEl, warningEl, drives, setDriveFn) {
+    selectEl.innerHTML = ''
+    if (!drives?.length) {
+      selectEl.innerHTML = '<option value="">No removable drives found</option>'
+      return
+    }
+    const ph = document.createElement('option')
+    ph.value = ''; ph.textContent = '— Select a drive —'
+    selectEl.appendChild(ph)
+    drives.forEach(d => {
+      const opt = document.createElement('option')
+      opt.value = d.device
+      opt.textContent = d.displayName
+      opt.dataset.drive = JSON.stringify(d)
+      selectEl.appendChild(opt)
+    })
+    selectEl.onchange = () => {
+      const opt = selectEl.selectedOptions[0]
+      if (opt?.dataset?.drive) {
+        setDriveFn(JSON.parse(opt.dataset.drive))
+        warningEl.style.display = 'block'
+        log(`Selected: ${JSON.parse(opt.dataset.drive).displayName}`, 'hi')
+      } else {
+        setDriveFn(null)
+        warningEl.style.display = 'none'
+      }
+      updateButton()
+    }
   }
 
   // ── Mode switching ────────────────────────────────────────────────────────────
@@ -506,13 +462,11 @@
     mode = m
     el.tabUSB.classList.toggle('active', m === 'usb')
     el.tabSD.classList.toggle('active',  m === 'sd')
-    el.cardUSB.style.display = m === 'usb' ? '' : 'none'
-    el.cardSD.style.display  = m === 'sd'  ? '' : 'none'
-    el.driveLabel.textContent = m === 'usb' ? 'Target USB Drive' : 'Target SD Card'
+    el.panelUSB.classList.toggle('hidden', m !== 'usb')
+    el.panelSD.classList.toggle('hidden',  m !== 'sd')
     imageLocalPath = null
-    phase = 'idle'
+    if (phase === 'done') phase = 'idle'
     updateButton()
-
     if (m === 'sd' && !sdRelease) loadSDRelease()
   }
 
@@ -530,14 +484,13 @@
     if (!sdRelease) return
     const filtered = sdRelease.images.filter(i => i.platform === currentPlatform)
     el.variantSelect.innerHTML = ''
-    if (filtered.length === 0) {
+    if (!filtered.length) {
       el.variantSelect.innerHTML = '<option value="">No images found for this platform</option>'
       return
     }
-    const placeholder = document.createElement('option')
-    placeholder.value = ''
-    placeholder.textContent = '— Select image —'
-    el.variantSelect.appendChild(placeholder)
+    const ph = document.createElement('option')
+    ph.value = ''; ph.textContent = '— Select image —'
+    el.variantSelect.appendChild(ph)
     filtered.forEach(img => {
       const opt = document.createElement('option')
       opt.value = img.url
@@ -549,11 +502,11 @@
 
   el.variantSelect.addEventListener('change', updateButton)
 
-  // ── Load USB (FPP-OS) release ─────────────────────────────────────────────────
+  // ── Load USB release ──────────────────────────────────────────────────────────
   async function loadUSBRelease() {
     el.statusDot.className = 'status-dot loading'
     el.headerSub.textContent = 'Fetching releases...'
-    log('Fetching FPP-OS release info...')
+    appendLog(el.usbLog, 'Fetching FPP-OS release info...')
     try {
       usbRelease = await window.fpp.getLatestRelease()
       if (!usbRelease?.isoUrl) throw new Error('No ISO asset found in release')
@@ -561,78 +514,61 @@
       el.usbMeta.innerHTML = `ISO <span>${usbRelease.isoName}</span>&nbsp;&nbsp;·&nbsp;&nbsp;${fmt(usbRelease.isoSize)}`
       el.statusDot.className = 'status-dot ok'
       el.headerSub.textContent = `FPP-OS ${usbRelease.version}`
-      log(`FPP-OS ${usbRelease.version} — ${usbRelease.isoName}`, 'ok')
+      appendLog(el.usbLog, `FPP-OS ${usbRelease.version} — ${usbRelease.isoName}`, 'ok')
     } catch (e) {
       el.usbMeta.textContent = 'Failed to fetch FPP-OS release'
       el.statusDot.className = 'status-dot error'
       el.headerSub.textContent = 'Error fetching release'
-      log(`Error: ${e.message}`, 'err')
+      appendLog(el.usbLog, `Error: ${e.message}`, 'err')
     }
     updateButton()
   }
 
-  // ── Load SD (FPP upstream) release ────────────────────────────────────────────
+  // ── Load SD release ───────────────────────────────────────────────────────────
   async function loadSDRelease() {
     el.sdMeta.textContent = 'Fetching FPP release...'
-    log('Fetching FPP SD image info from FalconChristmas/fpp...')
+    appendLog(el.sdLog, 'Fetching FPP SD images from FalconChristmas/fpp...')
     try {
       sdRelease = await window.fpp.getFPPRelease()
       el.sdVersion.textContent = sdRelease.version || '—'
       el.sdMeta.innerHTML = `<span>${sdRelease.images.length}</span> images available`
-      log(`FPP ${sdRelease.version} — ${sdRelease.images.length} SD images found`, 'ok')
+      appendLog(el.sdLog, `FPP ${sdRelease.version} — ${sdRelease.images.length} SD images found`, 'ok')
       populateVariants()
     } catch (e) {
       el.sdMeta.textContent = 'Failed to fetch FPP release'
-      log(`Error fetching FPP release: ${e.message}`, 'err')
+      appendLog(el.sdLog, `Error: ${e.message}`, 'err')
     }
     updateButton()
   }
 
   // ── Load drives ───────────────────────────────────────────────────────────────
-  async function loadDrives() {
-    el.driveSelect.innerHTML = '<option value="">Scanning...</option>'
-    el.driveWarning.style.display = 'none'
-    selectedDrive = null
+  async function loadDrives(targetMode) {
+    const selectEl  = targetMode === 'usb' ? el.usbDriveSelect  : el.sdDriveSelect
+    const warningEl = targetMode === 'usb' ? el.usbDriveWarning : el.sdDriveWarning
+    const setFn     = targetMode === 'usb'
+      ? d => { usbDrive = d }
+      : d => { sdDrive  = d }
+
+    selectEl.innerHTML = '<option value="">Scanning...</option>'
+    warningEl.style.display = 'none'
+    setFn(null)
     try {
       const drives = await window.fpp.listDrives()
-      el.driveSelect.innerHTML = ''
-      if (!drives?.length) {
-        el.driveSelect.innerHTML = '<option value="">No removable drives found</option>'
-      } else {
-        const ph = document.createElement('option')
-        ph.value = ''
-        ph.textContent = '— Select a drive —'
-        el.driveSelect.appendChild(ph)
-        drives.forEach(d => {
-          const opt = document.createElement('option')
-          opt.value = d.device
-          opt.textContent = d.displayName
-          opt.dataset.drive = JSON.stringify(d)
-          el.driveSelect.appendChild(opt)
-        })
-        log(`Found ${drives.length} removable drive${drives.length !== 1 ? 's' : ''}`)
+      populateDriveSelect(selectEl, warningEl, drives, setFn)
+      if (drives?.length) {
+        appendLog(targetMode === 'usb' ? el.usbLog : el.sdLog,
+          `Found ${drives.length} removable drive${drives.length !== 1 ? 's' : ''}`)
       }
     } catch (e) {
-      el.driveSelect.innerHTML = '<option value="">Error scanning drives</option>'
-      log(`Error listing drives: ${e.message}`, 'err')
+      selectEl.innerHTML = '<option value="">Error scanning drives</option>'
+      appendLog(targetMode === 'usb' ? el.usbLog : el.sdLog,
+        `Error listing drives: ${e.message}`, 'err')
     }
     updateButton()
   }
 
-  el.driveSelect.addEventListener('change', () => {
-    const opt = el.driveSelect.selectedOptions[0]
-    if (opt?.dataset?.drive) {
-      selectedDrive = JSON.parse(opt.dataset.drive)
-      el.driveWarning.style.display = 'block'
-      log(`Selected: ${selectedDrive.displayName}`, 'hi')
-    } else {
-      selectedDrive = null
-      el.driveWarning.style.display = 'none'
-    }
-    updateButton()
-  })
-
-  el.refreshDrives.addEventListener('click', loadDrives)
+  el.usbRefreshDrives.addEventListener('click', () => loadDrives('usb'))
+  el.sdRefreshDrives.addEventListener('click',  () => loadDrives('sd'))
 
   // ── Download progress ─────────────────────────────────────────────────────────
   window.fpp.onDownloadProgress(pct => setProgress(pct, 'Downloading'))
@@ -641,44 +577,45 @@
   function updateButton() {
     if (phase === 'downloading' || phase === 'flashing') return
 
-    let ready = false
-    if (mode === 'usb') {
-      ready = !!(usbRelease && selectedDrive)
-    } else {
-      const variantOpt = el.variantSelect.selectedOptions[0]
-      ready = !!(sdRelease && variantOpt?.dataset?.img && selectedDrive)
-    }
-
     if (phase === 'done') {
-      el.mainBtn.textContent = '✓ Done — Eject and boot!'
-      el.mainBtn.disabled = false
-      el.mainBtn.className = 'btn-main'
+      el.mainBtn.textContent      = '✓ Done — Eject and boot!'
+      el.mainBtn.disabled         = false
+      el.mainBtn.className        = 'btn-main'
       el.mainBtn.style.background = 'var(--success)'
       return
     }
 
-    el.mainBtn.disabled   = !ready
-    el.mainBtn.className  = 'btn-main'
+    let ready = false
+    if (mode === 'usb') {
+      ready = !!(usbRelease && usbDrive)
+    } else {
+      const opt = el.variantSelect.selectedOptions[0]
+      ready = !!(sdRelease && opt?.dataset?.img && sdDrive)
+    }
+
+    el.mainBtn.disabled         = !ready
+    el.mainBtn.className        = 'btn-main'
     el.mainBtn.style.background = ''
-    el.mainBtn.textContent = mode === 'usb' ? 'Flash to USB' : 'Flash to SD Card'
+    el.mainBtn.textContent      = mode === 'usb' ? 'Flash to USB' : 'Flash to SD Card'
   }
 
-  // ── Main action ───────────────────────────────────────────────────────────────
+  // ── Main flash action ─────────────────────────────────────────────────────────
   el.mainBtn.addEventListener('click', async () => {
     if (phase === 'downloading' || phase === 'flashing') return
 
-    // Resolve what we're downloading
-    let downloadUrl, downloadName
+    let downloadUrl, downloadName, targetDevice
     if (mode === 'usb') {
-      if (!usbRelease || !selectedDrive) return
+      if (!usbRelease || !usbDrive) return
       downloadUrl  = usbRelease.isoUrl
       downloadName = usbRelease.isoName
+      targetDevice = usbDrive.device
     } else {
-      const variantOpt = el.variantSelect.selectedOptions[0]
-      if (!variantOpt?.dataset?.img || !selectedDrive) return
-      const img = JSON.parse(variantOpt.dataset.img)
+      const opt = el.variantSelect.selectedOptions[0]
+      if (!opt?.dataset?.img || !sdDrive) return
+      const img    = JSON.parse(opt.dataset.img)
       downloadUrl  = img.url
       downloadName = img.name
+      targetDevice = sdDrive.device
     }
 
     // Lock UI
@@ -686,8 +623,6 @@
     el.mainBtn.disabled = true
     el.mainBtn.textContent = 'Downloading...'
     el.mainBtn.classList.add('working')
-    el.driveSelect.disabled = true
-    el.refreshDrives.style.pointerEvents = 'none'
     el.tabUSB.style.pointerEvents = 'none'
     el.tabSD.style.pointerEvents  = 'none'
 
@@ -700,27 +635,24 @@
       log('Download complete', 'ok')
     } catch (e) {
       log(`Download failed: ${e.message}`, 'err')
-      resetUI()
-      return
+      resetUI(); return
     }
 
-    // Flash
     phase = 'flashing'
     el.mainBtn.textContent = mode === 'usb' ? 'Flashing USB...' : 'Flashing SD Card...'
-    const target = selectedDrive.device
-    log(`Writing to ${target} — do not unplug...`, 'hi')
-    setIndeterminate(`Writing to ${target}`)
+    log(`Writing to ${targetDevice} — do not unplug...`, 'hi')
+    setIndeterminate(`Writing to ${targetDevice}`)
 
     try {
-      await window.fpp.flashDrive(imageLocalPath, target)
+      await window.fpp.flashDrive(imageLocalPath, targetDevice)
       phase = 'done'
       setProgress(100, 'Flash complete')
-      el.statusDot.className = 'status-dot ok'
+      el.statusDot.className      = 'status-dot ok'
       log('Flash complete! Eject the drive and boot from it.', 'ok')
       el.mainBtn.classList.remove('working')
       el.mainBtn.style.background = 'var(--success)'
-      el.mainBtn.textContent = '✓ Done — Eject and boot!'
-      el.mainBtn.disabled = false
+      el.mainBtn.textContent      = '✓ Done — Eject and boot!'
+      el.mainBtn.disabled         = false
       el.tabUSB.style.pointerEvents = ''
       el.tabSD.style.pointerEvents  = ''
     } catch (e) {
@@ -733,10 +665,7 @@
   function resetUI() {
     phase = 'idle'
     el.mainBtn.classList.remove('working')
-    el.mainBtn.textContent = mode === 'usb' ? 'Retry' : 'Retry'
     el.mainBtn.disabled = false
-    el.driveSelect.disabled = false
-    el.refreshDrives.style.pointerEvents = ''
     el.tabUSB.style.pointerEvents = ''
     el.tabSD.style.pointerEvents  = ''
     updateButton()
@@ -745,7 +674,7 @@
   // ── Init ──────────────────────────────────────────────────────────────────────
   ;(async () => {
     await loadUSBRelease()
-    await loadDrives()
+    await Promise.all([loadDrives('usb'), loadDrives('sd')])
   })()
 </script>
 </body>

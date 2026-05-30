@@ -145,7 +145,42 @@ ipcMain.handle('list-drives', async () => {
               displayName: `${info.MediaName || d.DeviceIdentifier} — /dev/${d.DeviceIdentifier} (${formatBytes(info.TotalSize || 0)})`
             }
           })
+      } else if (process.platform === 'darwin') {
+        // Use all disks, not just "external" — built-in SD card readers
+        // report SD cards as non-external so diskutil list -plist external misses them
+        const listJson = execSync(
+          'diskutil list -plist | plutil -convert json -o - -',
+          { encoding: 'utf8' }
+        )
+        const listParsed = JSON.parse(listJson)
+        const internalBusTypes = ['SATA', 'PCIe', 'NVMe', 'SCSI', 'ATA']
 
+        for (const disk of (listParsed.AllDisksAndPartitions || [])) {
+          const id = disk.DeviceIdentifier
+          if (!id) continue
+          try {
+            const infoJson = execSync(
+              `diskutil info -plist /dev/${id} | plutil -convert json -o - -`,
+              { encoding: 'utf8' }
+            )
+            const info       = JSON.parse(infoJson)
+            const bus        = info.BusProtocol || ''
+            const isWhole    = info.WholeMedia === true
+            const isRemovable = info.Removable === true || info.RemovableMedia === true
+            const isInternal  = internalBusTypes.includes(bus)
+
+            if (isWhole && !isInternal && (isRemovable || bus === 'SD' || bus === 'USB')) {
+              drives.push({
+                device:      `/dev/${id}`,
+                description: info.MediaName || info.IORegistryEntryName || id,
+                size:        info.TotalSize || 0,
+                displayName: `${info.MediaName || id} — /dev/${id} (${formatBytes(info.TotalSize || 0)}) [${bus}]`
+              })
+            }
+          } catch (_) {
+            // skip any disk we can't inspect (e.g. locked system volumes)
+          }
+        }
       } else {
         // Linux — parse lsblk
         const output = execSync(
