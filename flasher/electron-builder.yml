@@ -1,5 +1,5 @@
-appId: com.jessica12ryan.fpp-os-usb-flasher
-productName: FPP-OS USB Flasher
+appId: com.jessica12ryan.fpp-flasher
+productName: FPP Flasher
 
 directories:
   output: dist
@@ -14,18 +14,18 @@ win:
     - target: nsis
       arch: [x64]
   icon: build/icon.ico
-  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
+  artifactName: FPP-Flasher-${version}-${os}.${ext}
 
 mac:
   target:
     - target: dmg
       arch: [x64, arm64]
   icon: build/icon.icns
-  artifactName: FPP-OS-USB-Flasher-${version}-${os}-${arch}.${ext}
+  artifactName: FPP-Flasher-${version}-${os}-${arch}.${ext}
 
 linux:
   target:
     - target: AppImage
       arch: [x64]
   icon: build/icon.png
-  artifactName: FPP-OS-USB-Flasher-${version}-${os}.${ext}
+  artifactName: FPP-Flasher-${version}-${os}.${ext}

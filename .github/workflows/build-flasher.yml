@@ -1,4 +1,4 @@
-name: Build FPP-OS USB Flasher
+name: Build FPP Flasher
 
 on:
   repository_dispatch:

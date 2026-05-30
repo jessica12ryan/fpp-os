@@ -27,15 +27,15 @@ The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is s
 
 Downloading the ISO is not required for Virtual Machines as the VM script will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
 
-### FPP-OS USB Flasher (Recommended)
+### FPP Flasher (Recommended)
 The easiest way to get started. Automatically flashes the latest ISO to your USB drive in one click.
 
 | Platform         | Download                                  |
 |------------------|-------------------------------------------|
-| Windows          | `FPP-OS-USB-Flasher-x.x.x-win.exe`        |
-| macOS (Silicon)  | `FPP-OS-USB-Flasher-x.x.x-mac-arm64.dmg`  |
-| macOS (Intel)    | `FPP-OS-USB-Flasher-x.x.x-mac-x64.dmg`    |
-| Linux            | `FPP-OS-USB-Flasher-x.x.x-linux.AppImage` |
+| Windows          | `FPP-Flasher-x.x.x-win.exe`        |
+| macOS (Silicon)  | `FPP-Flasher-x.x.x-mac-arm64.dmg`  |
+| macOS (Intel)    | `FPP-Flasher-x.x.x-mac-x64.dmg`    |
+| Linux            | `FPP-Flasher-x.x.x-linux.AppImage` |
 
 Grab the latest flasher from the [**Releases**](../../releases/latest) page.
 
