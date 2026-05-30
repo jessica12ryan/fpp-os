@@ -1,3 +1,11 @@
+## [0.1.11] - 2026-05-30
+
+- Flasher - Fix SD card detection on macOS / Make UI more user friendly (jessica12ryan)
+- Update build-release.yml (jessica12ryan)
+- Update CHANGELOG.md for cleaning (jessica12ryan)
+
+---
+
 ## [0.1.10] - 2026-05-30
 
 - More updates to flasher (jessica12ryan)
