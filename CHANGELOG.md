@@ -1,3 +1,9 @@
+## [0.1.12] - 2026-05-30
+
+- Try again to fix flashing on Mac (jessica12ryan)
+
+---
+
 ## [0.1.11] - 2026-05-30
 
 - Flasher - Fix SD card detection on macOS / Make UI more user friendly (jessica12ryan)
