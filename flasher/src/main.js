@@ -11,7 +11,7 @@ let mainWindow
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 640,
-    height: 520,
+    height: 620,
     resizable: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -37,7 +37,7 @@ ipcMain.handle('get-latest-release', async () => {
       : `/repos/jessica12ryan/fpp-os/releases/latest`
     const options = {
       hostname: 'api.github.com',
-      path: `/repos/jessica12ryan/fpp-os/releases/tags/${builtForVersion}`,
+      path: apiPath,
       headers: {
         'User-Agent': 'fpp-flasher',
         'Accept': 'application/vnd.github.v3+json',
