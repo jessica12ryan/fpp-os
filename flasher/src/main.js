@@ -126,59 +126,55 @@ ipcMain.handle('list-drives', async () => {
           })
           .filter(d => d.description && d.device)
       } else if (process.platform === 'darwin') {
-        const output = execSync(
-          'diskutil list -plist external | plutil -convert json -o - -',
-          { encoding: 'utf8' }
-        )
-        const parsed = JSON.parse(output)
-        drives = (parsed.AllDisksAndPartitions || [])
-          .filter(d => d.DeviceIdentifier && !d.DeviceIdentifier.includes('s'))
-          .map(d => {
-            const info = JSON.parse(execSync(
-              `diskutil info -plist /dev/${d.DeviceIdentifier}`,
-              { encoding: 'utf8' }
-            ))
-            return {
-              device: `/dev/${d.DeviceIdentifier}`,
-              description: info.MediaName || info.IORegistryEntryName || d.DeviceIdentifier,
-              size: info.TotalSize || 0,
-              displayName: `${info.MediaName || d.DeviceIdentifier} — /dev/${d.DeviceIdentifier} (${formatBytes(info.TotalSize || 0)})`
-            }
-          })
-      } else if (process.platform === 'darwin') {
-        // Use all disks, not just "external" — built-in SD card readers
-        // report SD cards as non-external so diskutil list -plist external misses them
-        const listJson = execSync(
-          'diskutil list -plist | plutil -convert json -o - -',
-          { encoding: 'utf8' }
-        )
-        const listParsed = JSON.parse(listJson)
-        const internalBusTypes = ['SATA', 'PCIe', 'NVMe', 'SCSI', 'ATA']
-
-        for (const disk of (listParsed.AllDisksAndPartitions || [])) {
-          const id = disk.DeviceIdentifier
-          if (!id) continue
+        // Use full path — Electron's child process has a minimal PATH
+        const DISKUTIL = '/usr/sbin/diskutil'
+      
+        // Get all disk entries from plain text output
+        const listText = execSync(DISKUTIL + ' list', { encoding: 'utf8' })
+      
+        // Match whole-disk lines: "/dev/disk2 (external, physical):"
+        // Partition lines start with spaces so ^ with multiline excludes them
+        const diskMatches = [...listText.matchAll(/^(\/dev\/disk\d+)\s+\(([^)]+)\)/gm)]
+      
+        for (const match of diskMatches) {
+          const device  = match[1]   // e.g. /dev/disk2
+          const typeStr = match[2]   // e.g. "external, physical"
+      
+          // Skip synthesized APFS containers, disk images, virtual disks
+          if (!typeStr.includes('physical')) continue
+      
           try {
-            const infoJson = execSync(
-              `diskutil info -plist /dev/${id} | plutil -convert json -o - -`,
+            const infoText = execSync(
+              DISKUTIL + ' info ' + device,
               { encoding: 'utf8' }
             )
-            const info       = JSON.parse(infoJson)
-            const bus        = info.BusProtocol || ''
-            const isWhole    = info.WholeMedia === true
-            const isRemovable = info.Removable === true || info.RemovableMedia === true
-            const isInternal  = internalBusTypes.includes(bus)
-
-            if (isWhole && !isInternal && (isRemovable || bus === 'SD' || bus === 'USB')) {
+      
+            // Extract a field value from diskutil info plain text output
+            const field = (key) => {
+              const esc   = key.replace(/[.*+?^${}()|[\]/\\]/g, '\\$&')
+              const found = infoText.match(new RegExp(esc + ':\\s+(.+)'))
+              return found ? found[1].trim() : ''
+            }
+      
+            const ejectable = field('Ejectable')
+            const protocol  = field('Protocol')
+            const mediaName = field('Device / Media Name')
+            const sizeMatch = infoText.match(/Total Size:.*?\((\d+) Bytes\)/)
+            const totalSize = sizeMatch ? parseInt(sizeMatch[1]) : 0
+      
+            // Ejectable: Yes is the most reliable indicator of removable media on
+            // macOS — true for USB drives AND SD cards in built-in card readers
+            if (ejectable.toLowerCase() === 'yes') {
               drives.push({
-                device:      `/dev/${id}`,
-                description: info.MediaName || info.IORegistryEntryName || id,
-                size:        info.TotalSize || 0,
-                displayName: `${info.MediaName || id} — /dev/${id} (${formatBytes(info.TotalSize || 0)}) [${bus}]`
+                device,
+                description: mediaName || device,
+                size:        totalSize,
+                displayName: `${mediaName || device} — ${device} (${formatBytes(totalSize)}) [${protocol}]`
               })
             }
-          } catch (_) {
-            // skip any disk we can't inspect (e.g. locked system volumes)
+          } catch (diskErr) {
+            // Surface the error to the log instead of silently swallowing it
+            console.error(`[list-drives] skipping ${device}:`, diskErr.message)
           }
         }
       } else {
