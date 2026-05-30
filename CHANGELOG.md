@@ -1,3 +1,9 @@
+## [0.1.10] - 2026-05-30
+
+- More updates to flasher (jessica12ryan)
+
+---
+
 ## [0.1.9] - 2026-05-30
 
 - Delete flasher/images/icon.ico (jessica12ryan)
