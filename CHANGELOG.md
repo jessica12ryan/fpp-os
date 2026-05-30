@@ -1,3 +1,10 @@
+## [0.1.8] - 2026-05-30
+
+- Fix icons (jessica12ryan)
+- Adding FPP to SD support to flasher (jessica12ryan)
+
+---
+
 ## [0.1.7] - 2026-05-30
 
 - Update FPP Flasher to flash both FPP-OS ISO and FPP SD cards (jessica12ryan)
