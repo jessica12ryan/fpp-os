@@ -13,19 +13,19 @@ win:
   target:
     - target: nsis
       arch: [x64]
-  icon: build/icon.ico
+  icon: images/icon.ico
   artifactName: FPP-Flasher-${version}-${os}.${ext}
 
 mac:
   target:
     - target: dmg
       arch: [x64, arm64]
-  icon: build/icon.icns
+  icon: images/icon.icns
   artifactName: FPP-Flasher-${version}-${os}-${arch}.${ext}
 
 linux:
   target:
     - target: AppImage
       arch: [x64]
-  icon: build/icon.png
+  icon: images/icon.png
   artifactName: FPP-Flasher-${version}-${os}.${ext}
