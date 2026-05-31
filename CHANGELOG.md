@@ -1,3 +1,9 @@
+## [0.1.22] - 2026-05-31
+
+- Update preload.js (syntax error) (jessica12ryan)
+
+---
+
 ## [0.1.21] - 2026-05-31
 
 - Introducing automatic updates to flasher app (jessica12ryan)
