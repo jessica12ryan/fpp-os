@@ -333,7 +333,7 @@ function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
     : `/bin/dd if='${imagePath}' of='${rawDevice}' bs=4m oflag=sync`
 
   // Wrap: background dd, monitor with SIGINFO, capture exit code
-  const shellCmd = `${unmount}; ( ${ddJob} & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ) 2>&1 || { echo FALLBACK >&2; ${unmount}; ( /bin/dd if='${imagePath}' of='${device}' bs=4m oflag=sync & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ); }`
+  const shellCmd = `${unmount}; ( ${ddJob} & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ) || { echo FALLBACK >&2; ${unmount}; ( /bin/dd if='${imagePath}' of='${device}' bs=4m oflag=sync & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ); }`
 
   return new Promise((resolve, reject) => {
     const child = spawn('/usr/bin/sudo', ['-S', '-p', '', 'bash', '-c', shellCmd], {
