@@ -8,4 +8,8 @@ contextBridge.exposeInMainWorld('fpp', {
   flashDrive:       (iso, device)   => ipcRenderer.invoke('flash-drive', iso, device),
   onDownloadProgress: (cb)          => ipcRenderer.on('download-progress', (_e, pct) => cb(pct))
   onFlashProgress:     (cb)              => ipcRenderer.on('flash-progress', (_e, d) => cb(d))
+  checkFlasherUpdate:       ()                => ipcRenderer.invoke('check-flasher-update'),
+  downloadFlasherUpdate:    (url, name)       => ipcRenderer.invoke('download-flasher-update', url, name),
+  openFlasherDmg:           (path)            => ipcRenderer.invoke('open-flasher-dmg', path),
+  onUpdateDownloadProgress: (cb)              => ipcRenderer.on('update-download-progress', (_e, pct) => cb(pct))
 })

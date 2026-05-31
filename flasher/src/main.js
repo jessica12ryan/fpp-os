@@ -26,6 +26,17 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false)
 }
 
+function isNewerVersion(latest, current) {
+  const a = latest.replace(/^v/, '').split('.').map(Number)
+  const b = current.replace(/^v/, '').split('.').map(Number)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const na = a[i] || 0, nb = b[i] || 0
+    if (na > nb) return true
+    if (na < nb) return false
+  }
+  return false
+}
+
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => app.quit())
 
@@ -368,6 +379,66 @@ function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
     })
   })
 }
+
+// ── Check if a newer flasher version exists ─────────────────────────────────
+ipcMain.handle('check-flasher-update', async () => {
+  const current = app.getVersion()
+  if (current === '0.0.0') return { hasUpdate: false } // dev mode
+  return new Promise(resolve => {
+    const opts = {
+      hostname: 'api.github.com',
+      path: '/repos/jessica12ryan/fpp-os/releases/latest',
+      headers: {
+        'User-Agent': 'fpp-flasher',
+        'Accept': 'application/vnd.github.v3+json',
+        ...(ghToken && { 'Authorization': `Bearer ${ghToken}` })
+      }
+    }
+    https.get(opts, res => {
+      let data = ''
+      res.on('data', c => data += c)
+      res.on('end', () => {
+        try {
+          const rel = JSON.parse(data)
+          const latest = rel.tag_name.replace(/^v/, '')
+          const dmg = rel.assets?.find(a => a.name.endsWith('.dmg'))
+          if (isNewerVersion(latest, current) && dmg)
+            resolve({ hasUpdate: true, latestVersion: latest, currentVersion: current,
+                      downloadUrl: dmg.browser_download_url, downloadName: dmg.name,
+                      releaseUrl: rel.html_url })
+          else resolve({ hasUpdate: false })
+        } catch { resolve({ hasUpdate: false }) }
+      })
+    }).on('error', () => resolve({ hasUpdate: false }))
+  })
+})
+
+// ── Download flasher update DMG to Desktop ──────────────────────────────────
+ipcMain.handle('download-flasher-update', async (_event, url, name) => {
+  const dest = path.join(app.getPath('desktop'), name)
+  return new Promise((resolve, reject) => {
+    const follow = u => {
+      const mod = u.startsWith('https') ? https : http
+      mod.get(u, { headers: { 'User-Agent': 'fpp-flasher' } }, res => {
+        if (res.statusCode === 301 || res.statusCode === 302) return follow(res.headers.location)
+        const total = parseInt(res.headers['content-length'] || '0')
+        let rcvd = 0
+        const f = fs.createWriteStream(dest)
+        res.on('data', c => { rcvd += c.length; f.write(c)
+          if (total > 0) mainWindow.webContents.send('update-download-progress', Math.round(rcvd / total * 100))
+        })
+        res.on('end', () => { f.end(); resolve(dest) })
+        res.on('error', reject)
+      }).on('error', reject)
+    }
+    follow(url)
+  })
+})
+
+// ── Open the DMG in Finder ──────────────────────────────────────────────────
+ipcMain.handle('open-flasher-dmg', (_event, dmgPath) => {
+  exec(`open "${dmgPath}"`)
+})
 
 // ── Flash ISO to drive ────────────────────────────────────────────────────────
 ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
