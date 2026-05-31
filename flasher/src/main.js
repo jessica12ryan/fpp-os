@@ -3,7 +3,7 @@ const path  = require('path')
 const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
-const { exec }      = require('child_process')
+const { exec, spawn }      = require('child_process')
 const { promisify } = require('util')
 const execAsync     = promisify(exec)
 const ghToken = process.env.VITE_GH_READ_TOKEN || null
@@ -264,25 +264,99 @@ ipcMain.handle('download-iso', async (_event, url, isoName) => {
   })
 })
 
+// ── macOS password prompt via AppleScript ────────────────────────────────────
+function promptForPassword() {
+  return new Promise((resolve, reject) => {
+    const script = [
+      'display dialog "FPP Flasher needs administrator access to flash the drive.\\n\\nEnter your Mac administrator password to continue."',
+      'with title "FPP Flasher"',
+      'with icon caution',
+      'with hidden answer',
+      'default answer ""',
+      'buttons {"Cancel","OK"}',
+      'default button "OK"',
+      'cancel button "Cancel"'
+    ].join(' ¬\n  ')
+
+    const tmp = path.join(app.getPath('temp'), 'fpp-flasher-prompt.applescript')
+    fs.writeFileSync(tmp, script, 'utf8')
+
+    exec(`osascript "${tmp}" 2>/dev/null`, { timeout: 60000 }, (err, stdout) => {
+      try { fs.unlinkSync(tmp) } catch {}
+      if (err) { reject(new Error('Authentication cancelled')); return }
+      const m = stdout.match(/text returned:(.+?)\s*$/m)
+      m ? resolve(m[1].trim()) : reject(new Error('Could not read password'))
+    })
+  })
+}
+
+// ── Run command via sudo -S ──────────────────────────────────────────────────
+function execWithSudo(command, password) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('/usr/bin/sudo', ['-S', '-p', '', 'bash', '-c', command], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
+    let stdout = '', stderr = ''
+    child.stdout.on('data', d => stdout += d)
+    child.stderr.on('data', d => stderr += d)
+    child.stdin.write(password + '\n')
+    child.stdin.end()
+    child.on('close', code => {
+      if (code === 0) resolve(stdout)
+      else if (stderr.includes('Sorry') || stderr.includes('incorrect'))
+        reject(new Error('WRONG_PASSWORD'))
+      else reject(new Error(stderr || `Command failed (code ${code})`))
+    })
+    child.on('error', reject)
+  })
+}
+
 // ── Flash ISO to drive ────────────────────────────────────────────────────────
 ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
+  const isZip = imagePath.endsWith('.zip')
+
+  if (process.platform === 'darwin') {
+    const rawDevice = device.replace('/dev/disk', '/dev/rdisk')
+    const unmount = `/usr/sbin/diskutil unmountDisk force "${device}" 2>/dev/null || true`
+
+    const ddCmd = isZip
+      ? `${unmount} && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; ${unmount} && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${device}" bs=4m oflag=sync; }`
+      : `${unmount} && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; ${unmount} && /bin/dd if="${imagePath}" of="${device}" bs=4m oflag=sync; }`
+
+    let lastErr
+    for (let attempt = 0; attempt < 3; attempt++) {
+      let password
+      try { password = await promptForPassword() }
+      catch (e) { throw new Error(e.message === 'Authentication cancelled' ? 'Flashing cancelled' : e.message) }
+
+      try {
+        await execWithSudo(ddCmd, password)
+        return
+      } catch (e) {
+        if (e.message === 'WRONG_PASSWORD') { lastErr = 'Wrong password, try again'; continue }
+        if (e.message.includes('Operation not permitted') || e.message.includes('Permission denied')) {
+          throw new Error(
+            'FPP Flasher needs Full Disk Access.\n\n' +
+            'Open System Settings → Privacy & Security → Full Disk Access,\n' +
+            'click + and add "FPP Flasher.app", then retry.\n\n' +
+            'Alternatively, run from Terminal:\n' +
+            '  sudo "/Applications/FPP Flasher.app/Contents/MacOS/FPP Flasher"'
+          )
+        }
+        throw e
+      }
+    }
+    throw new Error(lastErr || 'Flash failed after 3 attempts')
+  }
+
+  // ── Linux / Windows: sudo-prompt (unchanged) ───────────────────────────────
   return new Promise((resolve, reject) => {
-    const isZip = imagePath.endsWith('.zip')
     let cmd
-
-    if (process.platform === 'darwin') {
-      const rawDevice = device.replace('/dev/disk', '/dev/rdisk')
-      cmd = isZip
-        ? `/usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; /usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${device}" bs=4m oflag=sync; }`
-        : `/usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; /usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /bin/dd if="${imagePath}" of="${device}" bs=4m oflag=sync; }`
-
-    } else if (process.platform === 'linux') {
+    if (process.platform === 'linux') {
       cmd = isZip
         ? `unzip -p "${imagePath}" | dd of="${device}" bs=4M status=progress oflag=sync`
         : `dd if="${imagePath}" of="${device}" bs=4M status=progress oflag=sync`
-
     } else {
-      // Windows — ZIP handled natively via .NET, no external tools needed
       cmd = isZip
         ? `powershell -Command "
             Add-Type -AssemblyName System.IO.Compression.FileSystem;
@@ -300,7 +374,6 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             while(($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) };
             $src.Close(); $dst.Close()"`
     }
-
     const sudoPrompt = require('sudo-prompt')
     sudoPrompt.exec(cmd, { name: 'FPP Flasher' }, (error, _stdout, stderr) => {
       if (error) reject(new Error(stderr || error.message))
