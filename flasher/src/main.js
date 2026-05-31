@@ -3,7 +3,9 @@ const path  = require('path')
 const fs    = require('fs')
 const https = require('https')
 const http  = require('http')
-const { execSync } = require('child_process')
+const { exec }      = require('child_process')
+const { promisify } = require('util')
+const execAsync     = promisify(exec)
 const ghToken = process.env.VITE_GH_READ_TOKEN || null
 
 let mainWindow
@@ -101,105 +103,125 @@ ipcMain.handle('get-fpp-release', async () => {
 
 // ── List removable drives ─────────────────────────────────────────────────────
 ipcMain.handle('list-drives', async () => {
-  return new Promise((resolve, reject) => {
-    try {
-      let drives = []
+  if (process.platform === 'darwin')      return listDrivesMac()
+  else if (process.platform === 'win32')  return listDrivesWin()
+  else                                    return listDrivesLinux()
+})
 
-      if (process.platform === 'win32') {
-        const output = execSync(
-          'powershell -Command "Get-Disk | Where-Object { $_.BusType -eq \'USB\' } | Select-Object Number,FriendlyName,Size | ConvertTo-Csv -NoTypeInformation"',
-          { encoding: 'utf8' }
-        )
-        const lines = output.trim().split('\n').slice(1) // skip header row
-        drives = lines
-          .map(line => {
-            const parts = line.split(',').map(p => p.replace(/"/g, '').trim())
-            const num  = parts[0]
-            const name = parts[1]
-            const size = parseInt(parts[2] || '0')
-            return {
-              device:      `\\\\.\\PhysicalDrive${num}`,
-              description: name,
-              size:        size,
-              displayName: `${name} — \\\\.\\PhysicalDrive${num} (${formatBytes(size)})`
-            }
-          })
-          .filter(d => d.description && d.device)
-      } else if (process.platform === 'darwin') {
-        // Use full path — Electron's child process has a minimal PATH
-        const DISKUTIL = '/usr/sbin/diskutil'
-      
-        // Get all disk entries from plain text output
-        const listText = execSync(DISKUTIL + ' list', { encoding: 'utf8' })
-      
-        // Match whole-disk lines: "/dev/disk2 (external, physical):"
-        // Partition lines start with spaces so ^ with multiline excludes them
-        const diskMatches = [...listText.matchAll(/^(\/dev\/disk\d+)\s+\(([^)]+)\)/gm)]
-      
-        for (const match of diskMatches) {
-          const device  = match[1]   // e.g. /dev/disk2
-          const typeStr = match[2]   // e.g. "external, physical"
-      
-          // Skip synthesized APFS containers, disk images, virtual disks
-          if (!typeStr.includes('physical')) continue
-      
-          try {
-            const infoText = execSync(
-              DISKUTIL + ' info ' + device,
-              { encoding: 'utf8' }
-            )
-      
-            // Extract a field value from diskutil info plain text output
-            const field = (key) => {
-              const esc   = key.replace(/[.*+?^${}()|[\]/\\]/g, '\\$&')
-              const found = infoText.match(new RegExp(esc + ':\\s+(.+)'))
-              return found ? found[1].trim() : ''
-            }
-      
-            const ejectable = field('Ejectable')
-            const protocol  = field('Protocol')
-            const mediaName = field('Device / Media Name')
-            const sizeMatch = infoText.match(/Total Size:.*?\((\d+) Bytes\)/)
-            const totalSize = sizeMatch ? parseInt(sizeMatch[1]) : 0
-      
-            // Ejectable: Yes is the most reliable indicator of removable media on
-            // macOS — true for USB drives AND SD cards in built-in card readers
-            if (ejectable.toLowerCase() === 'yes') {
-              drives.push({
-                device,
-                description: mediaName || device,
-                size:        totalSize,
-                displayName: `${mediaName || device} — ${device} (${formatBytes(totalSize)}) [${protocol}]`
-              })
-            }
-          } catch (diskErr) {
-            // Surface the error to the log instead of silently swallowing it
-            console.error(`[list-drives] skipping ${device}:`, diskErr.message)
-          }
-        }
-      } else {
-        // Linux — parse lsblk
-        const output = execSync(
-          'lsblk -J -o NAME,SIZE,TYPE,RM,HOTPLUG,VENDOR,MODEL',
-          { encoding: 'utf8' }
-        )
-        const parsed = JSON.parse(output)
-        drives = (parsed.blockdevices || [])
-          .filter(d => d.type === 'disk' && (d.rm === true || d.hotplug === true))
-          .map(d => ({
-            device: `/dev/${d.name}`,
-            description: `${d.vendor?.trim() || ''} ${d.model?.trim() || ''}`.trim() || d.name,
-            size: 0,
-            displayName: `${d.vendor?.trim() || ''} ${d.model?.trim() || ''} — /dev/${d.name} (${d.size})`.trim()
-          }))
+async function listDrivesMac() {
+  const env = {
+    PATH: '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+    HOME: process.env.HOME || '/var/root'
+  }
+
+  const { stdout: listText } = await execAsync('/usr/sbin/diskutil list', { env })
+  const drives = []
+  const errors = []
+
+  // Match ALL whole-disk lines — /dev/diskN (type): or /dev/diskN:
+  // Don't require "physical" — some macOS versions omit it for SD cards
+  const diskMatches = [...listText.matchAll(/^(\/dev\/disk\d+)\s*(?:\(([^)]+)\))?:/gm)]
+
+  for (const match of diskMatches) {
+    const device  = match[1]
+    const typeStr = (match[2] || '').toLowerCase()
+
+    // Only skip APFS synthesized containers, disk images, and virtual disks
+    if (typeStr === 'synthesized' ||
+        typeStr.includes('disk image') ||
+        typeStr.includes('virtual')) continue
+
+    try {
+      const { stdout: infoText } = await execAsync(
+        `/usr/sbin/diskutil info ${device}`,
+        { env }
+      )
+
+      const field = (key) => {
+        const esc = key.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+        const m   = infoText.match(new RegExp(esc + ':\\s+(.+)'))
+        return m ? m[1].trim() : ''
       }
 
-      resolve(drives)
-    } catch (e) {
-      reject(e)
+      const ejectable = field('Ejectable').toLowerCase()
+      const internal  = field('Internal').toLowerCase()
+      const protocol  = field('Protocol')
+      const mediaName = field('Device / Media Name')
+      const sizeMatch = infoText.match(/Total Size:.*?\((\d+) Bytes\)/)
+      const totalSize = sizeMatch ? parseInt(sizeMatch[1]) : 0
+
+      // Include if ejectable OR explicitly not internal
+      // Catches USB drives, SD cards in built-in readers, and external SD readers
+      if (ejectable === 'yes' || internal === 'no') {
+        drives.push({
+          device,
+          description: mediaName || device,
+          size:        totalSize,
+          displayName: `${mediaName || device} — ${device} (${formatBytes(totalSize)}) [${protocol}]`
+        })
+      }
+    } catch (err) {
+      errors.push(`${device}: ${err.message}`)
     }
-  })
-})
+  }
+
+  // If nothing found but errors occurred, surface them so the UI shows why
+  if (drives.length === 0 && errors.length > 0) {
+    throw new Error(`Drive detection failed:\n${errors.join('\n')}`)
+  }
+
+  return drives
+}
+
+async function listDrivesWin() {
+  const { stdout } = await execAsync(
+    'powershell -Command "Get-Disk | Where-Object { $_.BusType -in @(\'USB\',\'SD\') } | Select-Object Number,FriendlyName,Size | ConvertTo-Json -Compress"',
+    { encoding: 'utf8' }
+  )
+
+  const raw = stdout.trim()
+  if (!raw) return []
+
+  // ConvertTo-Json returns an object not array when only one disk found
+  let diskData = JSON.parse(raw)
+  if (!Array.isArray(diskData)) diskData = [diskData]
+
+  return diskData
+    .filter(d => d && d.Number !== undefined)
+    .map(d => ({
+      device:      `\\\\.\\PhysicalDrive${d.Number}`,
+      description: d.FriendlyName || `Disk ${d.Number}`,
+      size:        d.Size || 0,
+      displayName: `${d.FriendlyName || `Disk ${d.Number}`} — \\\\.\\PhysicalDrive${d.Number} (${formatBytes(d.Size || 0)})`
+    }))
+}
+
+async function listDrivesLinux() {
+  const { stdout } = await execAsync(
+    'lsblk -J -b -o NAME,SIZE,TYPE,RM,HOTPLUG,VENDOR,MODEL',
+    { encoding: 'utf8' }
+  )
+
+  const parsed = JSON.parse(stdout)
+  return (parsed.blockdevices || [])
+    .filter(d => {
+      if (d.type !== 'disk') return false
+      // Handle lsblk versions that return rm/hotplug as bool, int, or string "1"
+      const rm      = d.rm      === true || d.rm      === 1 || d.rm      === '1'
+      const hotplug = d.hotplug === true || d.hotplug === 1 || d.hotplug === '1'
+      return rm || hotplug
+    })
+    .map(d => {
+      const desc = `${(d.vendor || '').trim()} ${(d.model || '').trim()}`.trim() || d.name
+      const size = parseInt(d.size) || 0
+      return {
+        device:      `/dev/${d.name}`,
+        description: desc,
+        size,
+        displayName: `${desc} — /dev/${d.name} (${formatBytes(size)})`
+      }
+    })
+}
 
 // ── Download ISO ──────────────────────────────────────────────────────────────
 ipcMain.handle('download-iso', async (_event, url, isoName) => {
@@ -238,8 +260,8 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
     if (process.platform === 'darwin') {
       const rawDevice = device.replace('/dev/disk', '/dev/rdisk')
       cmd = isZip
-        ? `diskutil unmountDisk "${device}" && unzip -p "${imagePath}" | dd of="${rawDevice}" bs=4m`
-        : `diskutil unmountDisk "${device}" && dd if="${imagePath}" of="${rawDevice}" bs=4m`
+        ? `/usr/sbin/diskutil unmountDisk "${device}" && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m`
+        : `/usr/sbin/diskutil unmountDisk "${device}" && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m`
 
     } else if (process.platform === 'linux') {
       cmd = isZip
