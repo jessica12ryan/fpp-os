@@ -1,3 +1,9 @@
+## [0.1.23] - 2026-05-31
+
+- Update main.js to fix flasher progress (jessica12ryan)
+
+---
+
 ## [0.1.22] - 2026-05-31
 
 - Update preload.js (syntax error) (jessica12ryan)
