@@ -1,3 +1,9 @@
+## [0.1.17] - 2026-05-31
+
+- Try to fix macos flasher build (jessica12ryan)
+
+---
+
 ## [0.1.16] - 2026-05-31
 
 - Update package.json (jessica12ryan)
