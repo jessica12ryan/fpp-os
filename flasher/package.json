@@ -7,6 +7,14 @@
     "type": "git",
     "url": "https://github.com/jessica12ryan/fpp-os.git"
   },
+  "build": {
+    "mac": {
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "target": ["dmg", "zip"]
+    }
+  },
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
