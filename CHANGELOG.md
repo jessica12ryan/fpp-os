@@ -1,3 +1,9 @@
+## [0.1.16] - 2026-05-31
+
+- Update package.json (jessica12ryan)
+
+---
+
 ## [0.1.15] - 2026-05-31
 
 - Attempt to fix flasher permissions on macos (jessica12ryan)
