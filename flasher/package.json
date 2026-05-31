@@ -8,14 +8,19 @@
     "url": "https://github.com/jessica12ryan/fpp-os.git"
   },
   "build": {
-    "mac": {
-      "hardenedRuntime": true,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist",
-      "target": ["dmg", "zip"],
-      "identity": null
-    }
-  },
+      "appId": "com.jessica12ryan.fpp-flasher",
+      "mac": {
+        "target": [
+          { "target": "dmg", "arch": ["x64", "arm64"] },
+          { "target": "zip", "arch": ["x64", "arm64"] }
+        ],
+        "hardenedRuntime": true,
+        "gatekeeperAssess": false,
+        "entitlements": "entitlements.mac.plist",
+        "entitlementsInherit": "entitlements.mac.plist",
+        "identity": null
+      }
+    },
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
