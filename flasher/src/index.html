@@ -513,7 +513,7 @@
       el.usbVersion.textContent = usbRelease.version || '—'
       el.usbMeta.innerHTML = `ISO <span>${usbRelease.isoName}</span>&nbsp;&nbsp;·&nbsp;&nbsp;${fmt(usbRelease.isoSize)}`
       el.statusDot.className = 'status-dot ok'
-      el.headerSub.textContent = `FPP-OS ${usbRelease.version}`
+      el.headerSub.textContent = `v${usbRelease.version}`
       appendLog(el.usbLog, `FPP-OS ${usbRelease.version} — ${usbRelease.isoName}`, 'ok')
     } catch (e) {
       el.usbMeta.textContent = 'Failed to fetch FPP-OS release'
@@ -570,8 +570,9 @@
   el.usbRefreshDrives.addEventListener('click', () => loadDrives('usb'))
   el.sdRefreshDrives.addEventListener('click',  () => loadDrives('sd'))
 
-  // ── Download progress ─────────────────────────────────────────────────────────
+  // ── Download / Flash progress ─────────────────────────────────────────────────
   window.fpp.onDownloadProgress(pct => setProgress(pct, 'Downloading'))
+  window.fpp.onFlashProgress(d => setProgress(d.pct ?? null, d.text))
 
   // ── Button state ──────────────────────────────────────────────────────────────
   function updateButton() {
@@ -641,7 +642,7 @@
     phase = 'flashing'
     el.mainBtn.textContent = mode === 'usb' ? 'Flashing USB...' : 'Flashing SD Card...'
     log(`Writing to ${targetDevice} — do not unplug...`, 'hi')
-    setIndeterminate(`Writing to ${targetDevice}`)
+    setProgress(0, `Writing to ${targetDevice}...`)
 
     try {
       await window.fpp.flashDrive(imageLocalPath, targetDevice)

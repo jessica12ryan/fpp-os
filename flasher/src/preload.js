@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('fpp', {
   downloadISO:      (url, isoName)  => ipcRenderer.invoke('download-iso', url, isoName),
   flashDrive:       (iso, device)   => ipcRenderer.invoke('flash-drive', iso, device),
   onDownloadProgress: (cb)          => ipcRenderer.on('download-progress', (_e, pct) => cb(pct))
+  onFlashProgress:     (cb)              => ipcRenderer.on('flash-progress', (_e, d) => cb(d))
 })

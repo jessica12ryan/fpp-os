@@ -311,17 +311,70 @@ function execWithSudo(command, password) {
   })
 }
 
+// ── Flash via dd with periodic progress from SIGINFO ─────────────────────────
+function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
+  const totalSize = isZip ? null : fs.statSync(imagePath).size
+  const unmount = `/usr/sbin/diskutil unmountDisk force '${device}' 2>/dev/null || true`
+
+  // Run dd in background, send SIGINFO every 1s to get progress
+  const ddJob = isZip
+    ? `/usr/bin/unzip -p '${imagePath}' | /bin/dd of='${rawDevice}' bs=4m oflag=sync`
+    : `/bin/dd if='${imagePath}' of='${rawDevice}' bs=4m oflag=sync`
+
+  // Wrap: background dd, monitor with SIGINFO, capture exit code
+  const shellCmd = `${unmount}; ( ${ddJob} & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ) 2>&1 || { echo FALLBACK >&2; ${unmount}; ( /bin/dd if='${imagePath}' of='${device}' bs=4m oflag=sync & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ); }`
+
+  return new Promise((resolve, reject) => {
+    const child = spawn('/usr/bin/sudo', ['-S', '-p', '', 'bash', '-c', shellCmd], {
+      stdio: ['pipe', 'pipe', 'pipe']
+    })
+
+    let stderrBuf = ''
+    child.stderr.on('data', data => {
+      stderrBuf += data.toString()
+      const lines = stderrBuf.split('\n')
+      stderrBuf = lines.pop()
+      for (const line of lines) {
+        const m = line.match(/(\d+)\s+bytes\s+transferred/)
+        if (m) {
+          const written = parseInt(m[1])
+          if (totalSize) {
+            const pct = Math.min(Math.round(written / totalSize * 100), 100)
+            mainWindow.webContents.send('flash-progress', {
+              written, total: totalSize, pct,
+              text: `${(written/1024/1024).toFixed(1)} MB / ${(totalSize/1024/1024).toFixed(1)} MB`
+            })
+          } else {
+            mainWindow.webContents.send('flash-progress', {
+              written, total: 0, pct: null,
+              text: `${(written/1024/1024).toFixed(1)} MB written`
+            })
+          }
+        }
+      }
+    })
+
+    child.stdin.write(password + '\n')
+    child.stdin.end()
+
+    child.on('close', code => {
+      if (code === 0 || stderrBuf.includes('FALLBACK')){
+        if (totalSize) mainWindow.webContents.send('flash-progress', { total: totalSize, pct: 100, text: 'Complete' })
+        resolve()
+      } else if (stderrBuf.includes('Sorry') || stderrBuf.includes('incorrect'))
+        reject(new Error('WRONG_PASSWORD'))
+      else
+        reject(new Error(stderrBuf || `Command failed (code ${code})`))
+    })
+  })
+}
+
 // ── Flash ISO to drive ────────────────────────────────────────────────────────
 ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
   const isZip = imagePath.endsWith('.zip')
 
   if (process.platform === 'darwin') {
     const rawDevice = device.replace('/dev/disk', '/dev/rdisk')
-    const unmount = `/usr/sbin/diskutil unmountDisk force "${device}" 2>/dev/null || true`
-
-    const ddCmd = isZip
-      ? `${unmount} && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; ${unmount} && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${device}" bs=4m oflag=sync; }`
-      : `${unmount} && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; ${unmount} && /bin/dd if="${imagePath}" of="${device}" bs=4m oflag=sync; }`
 
     let lastErr
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -330,7 +383,7 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
       catch (e) { throw new Error(e.message === 'Authentication cancelled' ? 'Flashing cancelled' : e.message) }
 
       try {
-        await execWithSudo(ddCmd, password)
+        await flashWithProgress(imagePath, device, rawDevice, isZip, password)
         return
       } catch (e) {
         if (e.message === 'WRONG_PASSWORD') { lastErr = 'Wrong password, try again'; continue }
@@ -339,7 +392,7 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             'FPP Flasher needs Full Disk Access.\n\n' +
             'Open System Settings → Privacy & Security → Full Disk Access,\n' +
             'click + and add "FPP Flasher.app", then retry.\n\n' +
-            'Alternatively, run from Terminal:\n' +
+            'Or run from Terminal:\n' +
             '  sudo "/Applications/FPP Flasher.app/Contents/MacOS/FPP Flasher"'
           )
         }
