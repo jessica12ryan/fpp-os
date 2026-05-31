@@ -1,3 +1,9 @@
+## [0.1.15] - 2026-05-31
+
+- Attempt to fix flasher permissions on macos (jessica12ryan)
+
+---
+
 ## [0.1.14] - 2026-05-31
 
 - Attempt to fix removable drive detection on mac (jessica12ryan)
