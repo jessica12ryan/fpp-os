@@ -130,6 +130,26 @@ jobs:
           VITE_FPP_VERSION: ${{ env.VERSION }}
           VITE_GH_READ_TOKEN: ${{ secrets.GH_READ_TOKEN }}
 
+      - name: Ad-hoc sign macOS app
+        if: matrix.os == 'macos-latest'
+        working-directory: flasher
+        run: |
+          APP="dist/mac/FPP Flasher.app"
+          if [ -d "$APP" ]; then
+            codesign --force --deep --sign - \
+              --options runtime \
+              --entitlements entitlements.mac.plist \
+              "$APP"
+            echo "✓ Ad-hoc signed macOS app with hardening + entitlements"
+          else
+            echo "WARNING: $APP not found, trying to find .app elsewhere..."
+            find dist -name "*.app" -type d -exec \
+              codesign --force --deep --sign - \
+                --options runtime \
+                --entitlements entitlements.mac.plist \
+                {} \;
+          fi
+
       # ── 6. Upload to the release ──────────────────────────────────────────────
       - name: Upload flasher to release
         uses: softprops/action-gh-release@v3

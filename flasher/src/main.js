@@ -273,8 +273,8 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
     if (process.platform === 'darwin') {
       const rawDevice = device.replace('/dev/disk', '/dev/rdisk')
       cmd = isZip
-        ? `/usr/sbin/diskutil unmountDisk "${device}" && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m`
-        : `/usr/sbin/diskutil unmountDisk "${device}" && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m`
+        ? `/usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; /usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /usr/bin/unzip -p "${imagePath}" | /bin/dd of="${device}" bs=4m oflag=sync; }`
+        : `/usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /bin/dd if="${imagePath}" of="${rawDevice}" bs=4m oflag=sync 2>&1 || { echo "FALLBACK"; /usr/sbin/diskutil unmountDisk "${device}" 2>/dev/null || true && /bin/dd if="${imagePath}" of="${device}" bs=4m oflag=sync; }`
 
     } else if (process.platform === 'linux') {
       cmd = isZip
