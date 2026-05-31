@@ -1,3 +1,9 @@
+## [0.1.13] - 2026-05-31
+
+- Attempt to fix removable media detection on flasher (jessica12ryan)
+
+---
+
 ## [0.1.12] - 2026-05-30
 
 - Try again to fix flashing on Mac (jessica12ryan)
