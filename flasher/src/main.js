@@ -118,15 +118,12 @@ async function listDrivesMac() {
   const drives = []
   const errors = []
 
-  // Match ALL whole-disk lines — /dev/diskN (type): or /dev/diskN:
-  // Don't require "physical" — some macOS versions omit it for SD cards
   const diskMatches = [...listText.matchAll(/^(\/dev\/disk\d+)\s*(?:\(([^)]+)\))?:/gm)]
 
   for (const match of diskMatches) {
     const device  = match[1]
     const typeStr = (match[2] || '').toLowerCase()
 
-    // Only skip APFS synthesized containers, disk images, and virtual disks
     if (typeStr === 'synthesized' ||
         typeStr.includes('disk image') ||
         typeStr.includes('virtual')) continue
@@ -143,21 +140,38 @@ async function listDrivesMac() {
         return m ? m[1].trim() : ''
       }
 
+      // Safe normalization
       const ejectable = field('Ejectable').toLowerCase()
       const internal  = field('Internal').toLowerCase()
-      const protocol  = field('Protocol')
-      const mediaName = field('Device / Media Name')
-      const sizeMatch = infoText.match(/Total Size:.*?\((\d+) Bytes\)/)
+      const protocol  = field('Protocol').toLowerCase()
+      const removable = field('Removable Media').toLowerCase()
+      
+      const mediaName = field('Device / Media Name') || field('Device Node') || device
+      
+      // FIX 1: Accounts for both "Total Size" (Intel Macs) and "Disk Size" (Apple Silicon)
+      const sizeMatch = infoText.match(/(?:Disk|Total) Size:.*?\((\d+)\s*Bytes\)/i)
       const totalSize = sizeMatch ? parseInt(sizeMatch[1]) : 0
 
-      // Include if ejectable OR explicitly not internal
-      // Catches USB drives, SD cards in built-in readers, and external SD readers
-      if (ejectable === 'yes' || internal === 'no') {
+      // FIX 2: Check standard hardware protocols to bypass Apple's weird Internal/Ejectable flags
+      const isTargetMedia = 
+        internal === 'no' || 
+        ejectable === 'yes' || 
+        removable.includes('removable') || 
+        protocol.includes('usb') || 
+        protocol.includes('secure digital') ||
+        protocol.includes('sd')
+
+      // FIX 3: Safety net to explicitly prevent listing the main internal Mac OS boot drive
+      const isCoreMacDrive = internal === 'yes' && 
+        (protocol.includes('pci') || protocol.includes('apple') || protocol.includes('nvme'))
+
+      if (isTargetMedia && !isCoreMacDrive) {
         drives.push({
           device,
-          description: mediaName || device,
+          description: mediaName,
           size:        totalSize,
-          displayName: `${mediaName || device} — ${device} (${formatBytes(totalSize)}) [${protocol}]`
+          // Extract the original un-lowercased protocol for a cleaner UI display
+          displayName: `${mediaName} — ${device} (${formatBytes(totalSize)}) [${field('Protocol') || 'Unknown Protocol'}]`
         })
       }
     } catch (err) {
@@ -165,7 +179,6 @@ async function listDrivesMac() {
     }
   }
 
-  // If nothing found but errors occurred, surface them so the UI shows why
   if (drives.length === 0 && errors.length > 0) {
     throw new Error(`Drive detection failed:\n${errors.join('\n')}`)
   }
