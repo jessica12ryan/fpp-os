@@ -1,3 +1,10 @@
+## [0.1.21] - 2026-05-31
+
+- Introducing automatic updates to flasher app (jessica12ryan)
+- Add write progress for macOS flasher (jessica12ryan)
+
+---
+
 ## [0.1.20] - 2026-05-31
 
 - Try this with a different method (jessica12ryan)
