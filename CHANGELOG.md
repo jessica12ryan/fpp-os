@@ -1,3 +1,10 @@
+## [0.1.24] - 2026-06-01
+
+- Attempt to fix flasher on windows (jessica12ryan)
+- Cleaning up (jessica12ryan)
+
+---
+
 ## [0.1.23] - 2026-05-31
 
 - Update main.js to fix flasher progress (jessica12ryan)
