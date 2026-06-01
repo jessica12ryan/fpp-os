@@ -1,23 +1,8 @@
 ## [0.1.27] - 2026-06-01
 
 - Fix flashing on windows and autoupdater on mac (jessica12ryan)
-
----
-
-## [0.1.26] - 2026-06-01
-
 - Fix PowerShell script writing progress updates (jessica12ryan)
-
----
-
-## [0.1.25] - 2026-06-01
-
 - Fix flasher progress and auto-updater on Windows (jessica12ryan)
-
----
-
-## [0.1.24] - 2026-06-01
-
 - Attempt to fix flasher on windows (jessica12ryan)
 - Cleaning up (jessica12ryan)
 
