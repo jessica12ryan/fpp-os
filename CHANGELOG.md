@@ -1,3 +1,9 @@
+## [0.1.26] - 2026-06-01
+
+- Fix PowerShell script writing progress updates (jessica12ryan)
+
+---
+
 ## [0.1.25] - 2026-06-01
 
 - Fix flasher progress and auto-updater on Windows (jessica12ryan)
