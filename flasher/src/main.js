@@ -503,22 +503,22 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             '$buf = New-Object byte[] 4194304; $written = 0',
             "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
             '  $dst.Write($buf, 0, $n); $written += $n',
-            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())",
+            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
             '}',
             '$src.Close(); $dst.Close(); $zip.Dispose()',
-            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')",
+            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')`,
           ].join('\n')
         : [
             `$src = [System.IO.File]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
             `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
             '$buf = New-Object byte[] 4194304; $written = 0',
-            "$total = (Get-Item '${imagePath.replace(/'/g, "''")}').Length",
+            `$total = (Get-Item '${imagePath.replace(/'/g, "''")}').Length`,
             "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
             '  $dst.Write($buf, 0, $n); $written += $n',
-            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())",
+            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
             '}',
             '$src.Close(); $dst.Close()',
-            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')",
+            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')`,
           ].join('\n')
 
       psPath = path.join(app.getPath('temp'), `fpp-flash-${Date.now()}.ps1`)
@@ -542,10 +542,9 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
               written, total: 0, pct: null,
               text: `${(written/1024/1024).toFixed(1)} MB written`
             })
-          } catch {}
+          }
+        } catch {}
       }, 1000)
-
-      // Add psPath to cleanup
     }
     const sudoPrompt = require('sudo-prompt')
     sudoPrompt.exec(cmd, { name: 'FPP Flasher' }, (error, _stdout, stderr) => {
