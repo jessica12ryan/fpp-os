@@ -401,10 +401,13 @@ ipcMain.handle('check-flasher-update', async () => {
         try {
           const rel = JSON.parse(data)
           const latest = rel.tag_name.replace(/^v/, '')
-          const dmg = rel.assets?.find(a => a.name.endsWith('.dmg'))
-          if (isNewerVersion(latest, current) && dmg)
+          const ext = process.platform === 'darwin' ? '.dmg'
+                    : process.platform === 'win32' ? '.exe'
+                    : '.AppImage'
+          const asset = rel.assets?.find(a => a.name.endsWith(ext))
+          if (isNewerVersion(latest, current) && asset)
             resolve({ hasUpdate: true, latestVersion: latest, currentVersion: current,
-                      downloadUrl: dmg.browser_download_url, downloadName: dmg.name,
+                      downloadUrl: asset.browser_download_url, downloadName: asset.name,
                       releaseUrl: rel.html_url })
           else resolve({ hasUpdate: false })
         } catch { resolve({ hasUpdate: false }) }
@@ -435,9 +438,12 @@ ipcMain.handle('download-flasher-update', async (_event, url, name) => {
   })
 })
 
-// ── Open the DMG in Finder ──────────────────────────────────────────────────
+// ── Open flasher update file ──────────────────────────────────────────────────
 ipcMain.handle('open-flasher-dmg', (_event, dmgPath) => {
-  exec(`open "${dmgPath}"`)
+  const openCmd = process.platform === 'darwin' ? 'open'
+                : process.platform === 'win32' ? 'start ""'
+                : 'xdg-open'
+  exec(`${openCmd} "${dmgPath}"`)
 })
 
 // ── Flash ISO to drive ────────────────────────────────────────────────────────
@@ -477,38 +483,75 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
   return new Promise((resolve, reject) => {
     let cmd
     let psPath = null
+    let progressFile = null
+    let pollTimer = null
     if (process.platform === 'linux') {
       cmd = isZip
         ? `unzip -p "${imagePath}" | dd of="${device}" bs=4M status=progress oflag=sync`
         : `dd if="${imagePath}" of="${device}" bs=4M status=progress oflag=sync`
     } else {
-      // Windows — write PowerShell to .ps1 file to avoid inline escaping issues
+      // Windows
+      const totalSize = isZip ? null : fs.statSync(imagePath).size
+      progressFile = path.join(app.getPath('temp'), `fpp-progress-${Date.now()}.txt`)
       const psContent = isZip
         ? [
             'Add-Type -AssemblyName System.IO.Compression.FileSystem',
             `$zip = [System.IO.Compression.ZipFile]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
-            '$entry = $zip.Entries[0]',
+            '$entry = $zip.Entries[0]; $total = $entry.Length',
             '$src = $entry.Open()',
             `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
-            '$buf = New-Object byte[] 4194304',
-            'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) }',
-            '$src.Close(); $dst.Close(); $zip.Dispose()'
+            '$buf = New-Object byte[] 4194304; $written = 0',
+            "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
+            '  $dst.Write($buf, 0, $n); $written += $n',
+            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())",
+            '}',
+            '$src.Close(); $dst.Close(); $zip.Dispose()',
+            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')",
           ].join('\n')
         : [
             `$src = [System.IO.File]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
             `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
-            '$buf = New-Object byte[] 4194304',
-            'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) }',
-            '$src.Close(); $dst.Close()'
+            '$buf = New-Object byte[] 4194304; $written = 0',
+            "$total = (Get-Item '${imagePath.replace(/'/g, "''")}').Length",
+            "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
+            '  $dst.Write($buf, 0, $n); $written += $n',
+            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())",
+            '}',
+            '$src.Close(); $dst.Close()',
+            "  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')",
           ].join('\n')
 
       psPath = path.join(app.getPath('temp'), `fpp-flash-${Date.now()}.ps1`)
       fs.writeFileSync(psPath, psContent, 'utf8')
       cmd = `powershell -NoProfile -ExecutionPolicy Bypass -File "${psPath}"`
+
+      // Poll progress file
+      pollTimer = setInterval(() => {
+        try {
+          const text = fs.readFileSync(progressFile, 'utf8').trim()
+          if (text === 'DONE') return
+          const written = parseInt(text)
+          if (written && totalSize) {
+            const pct = Math.min(Math.round(written / totalSize * 100), 100)
+            mainWindow.webContents.send('flash-progress', {
+              written, total: totalSize, pct,
+              text: `${(written/1024/1024).toFixed(1)} MB / ${(totalSize/1024/1024).toFixed(1)} MB`
+            })
+          } else if (written) {
+            mainWindow.webContents.send('flash-progress', {
+              written, total: 0, pct: null,
+              text: `${(written/1024/1024).toFixed(1)} MB written`
+            })
+          } catch {}
+      }, 1000)
+
+      // Add psPath to cleanup
     }
     const sudoPrompt = require('sudo-prompt')
     sudoPrompt.exec(cmd, { name: 'FPP Flasher' }, (error, _stdout, stderr) => {
+      clearInterval(pollTimer)
       if (psPath) { try { fs.unlinkSync(psPath) } catch {} }
+      try { fs.unlinkSync(progressFile) } catch {}
       if (error) reject(new Error(stderr || error.message))
       else resolve()
     })
