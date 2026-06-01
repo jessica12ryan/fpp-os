@@ -4,6 +4,8 @@
 
 This repository automatically builds a bootable FPP-OS ISO that will automatically download and install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM environments.
 
+Our FPP Flasher application can also be used to image the latest version of FPP on to an SD card for Pi's and BeagleBones.
+
 FPP-OS currently uses the master branch of FPP which contains the unstable version of FPP 10. Once FPP 10 is released, we will switch to stable builds.
 
 FPP-OS is not officially supported by the FalconChristmas/FPP team. All issues from this installation should be logged to THIS repo. We will test and confirm whether the issue is isolated to our repo, and recreate the ticket on the FPP repo if necessary. The FPP team will not respond to any issues from this installation.
