@@ -476,30 +476,39 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
   // ── Linux / Windows: sudo-prompt (unchanged) ───────────────────────────────
   return new Promise((resolve, reject) => {
     let cmd
+    let psPath = null
     if (process.platform === 'linux') {
       cmd = isZip
         ? `unzip -p "${imagePath}" | dd of="${device}" bs=4M status=progress oflag=sync`
         : `dd if="${imagePath}" of="${device}" bs=4M status=progress oflag=sync`
     } else {
-      cmd = isZip
-        ? `powershell -Command "
-            Add-Type -AssemblyName System.IO.Compression.FileSystem;
-            $zip = [System.IO.Compression.ZipFile]::OpenRead('${imagePath}');
-            $entry = $zip.Entries[0];
-            $src = $entry.Open();
-            $dst = [System.IO.File]::Open('${device}', 'Open', 'Write');
-            $buf = New-Object byte[] 4194304;
-            while(($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) };
-            $src.Close(); $dst.Close(); $zip.Dispose()"`
-        : `powershell -Command "
-            $src = [System.IO.File]::OpenRead('${imagePath}');
-            $dst = [System.IO.File]::Open('${device}', 'Open', 'Write');
-            $buf = New-Object byte[] 4194304;
-            while(($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) };
-            $src.Close(); $dst.Close()"`
+      // Windows — write PowerShell to .ps1 file to avoid inline escaping issues
+      const psContent = isZip
+        ? [
+            'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+            `$zip = [System.IO.Compression.ZipFile]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
+            '$entry = $zip.Entries[0]',
+            '$src = $entry.Open()',
+            `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
+            '$buf = New-Object byte[] 4194304',
+            'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) }',
+            '$src.Close(); $dst.Close(); $zip.Dispose()'
+          ].join('\n')
+        : [
+            `$src = [System.IO.File]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
+            `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
+            '$buf = New-Object byte[] 4194304',
+            'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) { $dst.Write($buf, 0, $n) }',
+            '$src.Close(); $dst.Close()'
+          ].join('\n')
+
+      psPath = path.join(app.getPath('temp'), `fpp-flash-${Date.now()}.ps1`)
+      fs.writeFileSync(psPath, psContent, 'utf8')
+      cmd = `powershell -NoProfile -ExecutionPolicy Bypass -File "${psPath}"`
     }
     const sudoPrompt = require('sudo-prompt')
     sudoPrompt.exec(cmd, { name: 'FPP Flasher' }, (error, _stdout, stderr) => {
+      if (psPath) { try { fs.unlinkSync(psPath) } catch {} }
       if (error) reject(new Error(stderr || error.message))
       else resolve()
     })
