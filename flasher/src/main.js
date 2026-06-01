@@ -404,7 +404,9 @@ ipcMain.handle('check-flasher-update', async () => {
           const ext = process.platform === 'darwin' ? '.dmg'
                     : process.platform === 'win32' ? '.exe'
                     : '.AppImage'
-          const asset = rel.assets?.find(a => a.name.endsWith(ext))
+          const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
+          const asset = rel.assets?.find(a => a.name.endsWith(ext) && a.name.includes(arch))
+            || rel.assets?.find(a => a.name.endsWith(ext))
           if (isNewerVersion(latest, current) && asset)
             resolve({ hasUpdate: true, latestVersion: latest, currentVersion: current,
                       downloadUrl: asset.browser_download_url, downloadName: asset.name,
@@ -501,7 +503,7 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             '$src = $entry.Open()',
             `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
             '$buf = New-Object byte[] 4194304; $written = 0',
-            "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
+            "while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {",
             '  $dst.Write($buf, 0, $n); $written += $n',
             `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
             '}',
@@ -513,7 +515,7 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
             '$buf = New-Object byte[] 4194304; $written = 0',
             `$total = (Get-Item '${imagePath.replace(/'/g, "''")}').Length`,
-            "while ((`$n = `$src.Read(`$buf, 0, `$buf.Length)) -gt 0) {",
+            "while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {",
             '  $dst.Write($buf, 0, $n); $written += $n',
             `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
             '}',
