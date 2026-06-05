@@ -27,7 +27,7 @@ The installer will boot using UEFI (preferred) or Legacy BIOS. If your BIOS is s
 
 ## 📥 Download (For Physical PC's)
 
-Downloading the ISO is not required for Virtual Machines as the VM script will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
+Downloading the ISO is not typically. The VM scripts and the FPP Flasher tool will download the ISO automatically. If you are installing on a VM, skip directly to the [Installation Guide](#installation-guide).
 
 ### FPP Flasher (Recommended)
 The easiest way to get started. Automatically flashes the latest ISO to your USB drive in one click.
