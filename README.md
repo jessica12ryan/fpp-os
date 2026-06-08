@@ -160,7 +160,11 @@ iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp
 6. Installation of OS and warns to remove install media and the system shuts down (VMware usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+9. After reboot, login as root with password falcon, and run the following command
+```
+apt update && apt install open-vm-tools -y
+```
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---
