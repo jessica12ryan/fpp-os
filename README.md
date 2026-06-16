@@ -2,6 +2,8 @@
 
 > **Automated Debian-based ISO builder for [Falcon Player (FPP)](https://github.com/FalconChristmas/fpp)**
 
+**FPP-HA for Home Assistant can be found at the [FPP-HA repo](https://github.com/jessica12ryan/fpp-ha)**
+
 This repository automatically builds a bootable FPP-OS ISO that will automatically download and install FPP on a PC or virtual machine. It also includes an easy to use USB flashing tool for Windows, macOS, and Linux, as well as automated scripts for the most popular VM environments.
 
 Our FPP Flasher application can also be used to image the latest version of FPP on to an SD card for Pi's and BeagleBones.
