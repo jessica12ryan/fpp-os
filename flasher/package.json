@@ -13,7 +13,7 @@
     "build": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^39.8.5",
+    "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "eslint": "^10.5.0"
   },
