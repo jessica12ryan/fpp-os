@@ -13,8 +13,8 @@ sudo apt-get install -y xorriso isolinux syslinux-common curl gpg python3 cpio g
 ### Build
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/fpp-debian.git
-cd fpp-debian
+git clone https://github.com/jessica12ryan/fpp-os.git
+cd fpp-os
 bash scripts/build-iso.sh
 ```
 
@@ -25,7 +25,7 @@ The output ISO will be in the repo root: `fpp-os-amd64.iso`
 ## 📁 Repository structure
 
 ```
-fpp-debian/
+fpp-os/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── bug_report.md

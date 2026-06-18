@@ -20,10 +20,17 @@ $VMLocation     = "$VMBaseLocation\$VMName"
 $VMXPath        = "$VMLocation\$VMName.vmx"
 $LocalISOFolder = "$VMBaseLocation\ISOs"
 
-# Locate vmrun.exe (Standard VMware Workstation Path)
-$VMRunPath = "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe"
-if (-not (Test-Path $VMRunPath)) {
-    Write-Error "VMware Workstation (vmrun.exe) could not be found at $VMRunPath. Please ensure it is installed."
+# Locate vmrun.exe (Check both 64-bit and 32-bit Program Files paths)
+$VMRunPath = $null
+$VMPaths = @(
+    "C:\Program Files\VMware\VMware Workstation\vmrun.exe",
+    "C:\Program Files (x86)\VMware\VMware Workstation\vmrun.exe"
+)
+foreach ($p in $VMPaths) {
+    if (Test-Path $p) { $VMRunPath = $p; break }
+}
+if (-not $VMRunPath) {
+    Write-Error "VMware Workstation (vmrun.exe) could not be found. Please ensure it is installed."
     Exit
 }
 

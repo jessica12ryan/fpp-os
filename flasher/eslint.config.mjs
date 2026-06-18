@@ -22,7 +22,6 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-console': 'off',
       'no-empty': ['warn', { allowEmptyCatch: true }],
-      'preserve-caught-error': 'off',
     },
   },
 ]
