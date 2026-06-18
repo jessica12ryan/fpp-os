@@ -47,7 +47,7 @@ ipcMain.handle('get-latest-release', async () => {
       (app.getVersion() !== '0.0.0' ? app.getVersion() : null)
     const apiPath = builtForVersion
       ? `/repos/jessica12ryan/fpp-os/releases/tags/${builtForVersion}`
-      : `/repos/jessica12ryan/fpp-os/releases/latest`
+      : '/repos/jessica12ryan/fpp-os/releases/latest'
     const options = {
       hostname: 'api.github.com',
       path: apiPath,
@@ -101,9 +101,9 @@ ipcMain.handle('get-fpp-release', async () => {
               url:  a.browser_download_url,
               size: a.size,
               platform: a.name.includes('BB64') ? 'bb64'
-                      : a.name.includes('BBB')  ? 'bb'
-                      : a.name.includes('Pi')   ? 'pi'
-                      : 'other'
+                : a.name.includes('BBB')  ? 'bb'
+                  : a.name.includes('Pi')   ? 'pi'
+                    : 'other'
             }))
           resolve({ version: release.tag_name, images })
         } catch (e) { reject(e) }
@@ -301,27 +301,6 @@ function promptForPassword() {
   })
 }
 
-// ── Run command via sudo -S ──────────────────────────────────────────────────
-function execWithSudo(command, password) {
-  return new Promise((resolve, reject) => {
-    const child = spawn('/usr/bin/sudo', ['-S', '-p', '', 'bash', '-c', command], {
-      stdio: ['pipe', 'pipe', 'pipe']
-    })
-    let stdout = '', stderr = ''
-    child.stdout.on('data', d => stdout += d)
-    child.stderr.on('data', d => stderr += d)
-    child.stdin.write(password + '\n')
-    child.stdin.end()
-    child.on('close', code => {
-      if (code === 0) resolve(stdout)
-      else if (stderr.includes('Sorry') || stderr.includes('incorrect'))
-        reject(new Error('WRONG_PASSWORD'))
-      else reject(new Error(stderr || `Command failed (code ${code})`))
-    })
-    child.on('error', reject)
-  })
-}
-
 // ── Flash via dd with periodic progress from SIGINFO ─────────────────────────
 function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
   const totalSize = isZip ? null : fs.statSync(imagePath).size
@@ -402,15 +381,15 @@ ipcMain.handle('check-flasher-update', async () => {
           const rel = JSON.parse(data)
           const latest = rel.tag_name.replace(/^v/, '')
           const ext = process.platform === 'darwin' ? '.dmg'
-                    : process.platform === 'win32' ? '.exe'
-                    : '.AppImage'
+            : process.platform === 'win32' ? '.exe'
+              : '.AppImage'
           const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
           const asset = rel.assets?.find(a => a.name.endsWith(ext) && a.name.includes(arch))
             || rel.assets?.find(a => a.name.endsWith(ext))
           if (isNewerVersion(latest, current) && asset)
             resolve({ hasUpdate: true, latestVersion: latest, currentVersion: current,
-                      downloadUrl: asset.browser_download_url, downloadName: asset.name,
-                      releaseUrl: rel.html_url })
+              downloadUrl: asset.browser_download_url, downloadName: asset.name,
+              releaseUrl: rel.html_url })
           else resolve({ hasUpdate: false })
         } catch { resolve({ hasUpdate: false }) }
       })
@@ -443,8 +422,8 @@ ipcMain.handle('download-flasher-update', async (_event, url, name) => {
 // ── Open flasher update file ──────────────────────────────────────────────────
 ipcMain.handle('open-flasher-dmg', (_event, dmgPath) => {
   const openCmd = process.platform === 'darwin' ? 'open'
-                : process.platform === 'win32' ? 'start ""'
-                : 'xdg-open'
+    : process.platform === 'win32' ? 'start ""'
+      : 'xdg-open'
   exec(`${openCmd} "${dmgPath}"`)
 })
 
@@ -497,31 +476,31 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
       progressFile = path.join(app.getPath('temp'), `fpp-progress-${Date.now()}.txt`)
       const psContent = isZip
         ? [
-            'Add-Type -AssemblyName System.IO.Compression.FileSystem',
-            `$zip = [System.IO.Compression.ZipFile]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
-            '$entry = $zip.Entries[0]; $total = $entry.Length',
-            '$src = $entry.Open()',
-            `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
-            '$buf = New-Object byte[] 4194304; $written = 0',
-            "while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {",
-            '  $dst.Write($buf, 0, $n); $written += $n',
-            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
-            '}',
-            '$src.Close(); $dst.Close(); $zip.Dispose()',
-            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')`,
-          ].join('\n')
+          'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+          `$zip = [System.IO.Compression.ZipFile]::OpenRead('${imagePath.replace(/'/g, '\'\'')}')`,
+          '$entry = $zip.Entries[0]; $total = $entry.Length',
+          '$src = $entry.Open()',
+          `$dst = [System.IO.File]::Open('${device.replace(/'/g, '\'\'')}', 'Open', 'Write')`,
+          '$buf = New-Object byte[] 4194304; $written = 0',
+          'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {',
+          '  $dst.Write($buf, 0, $n); $written += $n',
+          `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, '\'\'')}', $written.ToString())`,
+          '}',
+          '$src.Close(); $dst.Close(); $zip.Dispose()',
+          `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, '\'\'')}', 'DONE')`,
+        ].join('\n')
         : [
-            `$src = [System.IO.File]::OpenRead('${imagePath.replace(/'/g, "''")}')`,
-            `$dst = [System.IO.File]::Open('${device.replace(/'/g, "''")}', 'Open', 'Write')`,
-            '$buf = New-Object byte[] 4194304; $written = 0',
-            `$total = (Get-Item '${imagePath.replace(/'/g, "''")}').Length`,
-            "while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {",
-            '  $dst.Write($buf, 0, $n); $written += $n',
-            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', $written.ToString())`,
-            '}',
-            '$src.Close(); $dst.Close()',
-            `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, "''")}', 'DONE')`,
-          ].join('\n')
+          `$src = [System.IO.File]::OpenRead('${imagePath.replace(/'/g, '\'\'')}')`,
+          `$dst = [System.IO.File]::Open('${device.replace(/'/g, '\'\'')}', 'Open', 'Write')`,
+          '$buf = New-Object byte[] 4194304; $written = 0',
+          `$total = (Get-Item '${imagePath.replace(/'/g, '\'\'')}').Length`,
+          'while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {',
+          '  $dst.Write($buf, 0, $n); $written += $n',
+          `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, '\'\'')}', $written.ToString())`,
+          '}',
+          '$src.Close(); $dst.Close()',
+          `  [System.IO.File]::WriteAllText('${progressFile.replace(/'/g, '\'\'')}', 'DONE')`,
+        ].join('\n')
 
       psPath = path.join(app.getPath('temp'), `fpp-flash-${Date.now()}.ps1`)
       fs.writeFileSync(psPath, psContent, 'utf8')
