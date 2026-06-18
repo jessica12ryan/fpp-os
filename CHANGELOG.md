@@ -1,3 +1,10 @@
+## [0.2.1] - 2026-06-18
+
+- Improve error handling for authentication cancellation (jessica12ryan)
+- Fix multiple minor errors (jessica12ryan)
+
+---
+
 ## [0.2.0] - 2026-06-18
 
 - Updates to fix eslint (jessica12ryan)
