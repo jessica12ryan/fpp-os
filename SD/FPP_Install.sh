@@ -497,7 +497,7 @@ install_base_packages() {
         #remove a bunch of packages that aren't neeeded, free's up space
         PACKAGE_REMOVE="nginx nginx-full nginx-common  triggerhappy pocketsphinx-en-us guile-2.2-libs \
             gfortran glib-networking libxmuu1 xauth network-manager dhcpcd5 fake-hwclock ifupdown isc-dhcp-client isc-dhcp-common openresolv \
-            unattended-upgrades packagekit iwd"
+            unattended-upgrades packagekit iwd apt-listchanges"
         if [ "$FPPPLATFORM" == "BeagleBone 64" -o "$FPPPLATFORM" == "BeagleBone Black" ]; then
             PACKAGE_REMOVE="$PACKAGE_REMOVE nodejs mender-client bb-code-server"
         fi
@@ -643,7 +643,7 @@ install_base_packages() {
                       bc bash-completion btrfs-progs exfat-fuse lsof ethtool curl zip unzip bzip2 wireless-tools dos2unix \
                       fbi fbset file flite ca-certificates lshw gettext wget iproute2 fswatch \
                       build-essential ffmpeg gcc g++ gdb vim vim-common bison flex device-tree-compiler dh-autoreconf \
-                      git hdparm i2c-tools jq less sysstat tcpdump time usbutils usb-modeswitch \
+                      git hdparm i2c-tools jq less tcpdump time usbutils usb-modeswitch \
                       samba rsync sudo shellinabox dnsmasq hostapd vsftpd sqlite3 at haveged samba samba-common-bin \
                       mp3info exim4 mailutils dhcp-helper parprouted bridge-utils libiio-utils libhidapi-dev \
                       php${PHPVER} php${PHPVER}-cli php${PHPVER}-fpm php${PHPVER}-common php${PHPVER}-curl php-pear \
@@ -663,11 +663,31 @@ install_base_packages() {
                       yt-dlp"
 
         if [ "$FPPPLATFORM" == "Raspberry Pi" -o "$FPPPLATFORM" == "BeagleBone Black"  -o "$FPPPLATFORM" == "BeagleBone 64" ]; then
-            PACKAGE_LIST="$PACKAGE_LIST firmware-realtek firmware-atheros firmware-ralink firmware-brcm80211 firmware-iwlwifi firmware-libertas firmware-zd1211 firmware-ti-connectivity zram-tools"
+            # firmware-misc-nonfree carries the rt2x00 / Mediatek (mt7601u, mt76xx) USB
+            # wifi blobs
+            PACKAGE_LIST="$PACKAGE_LIST firmware-realtek firmware-atheros firmware-brcm80211 firmware-iwlwifi firmware-libertas firmware-zd1211 firmware-ti-connectivity firmware-misc-nonfree zram-tools"
             if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
                 PACKAGE_LIST="$PACKAGE_LIST libva-dev smartmontools edid-decode kms++-utils"
             fi
             if [ "$FPPPLATFORM" == "BeagleBone Black"  -o "$FPPPLATFORM" == "BeagleBone 64" ]; then
+                # firmware-misc-nonfree lives in Debian's non-free-firmware component.
+                # Newer rcn-ee BeagleBone base images already enable non-free-firmware in
+                # /etc/apt/sources.list; older ones did not, leaving firmware-misc-nonfree
+                # with no install candidate. Only drop in our own source when it's actually
+                # missing -- otherwise apt warns about the component being "configured
+                # multiple times". Clean up any stale drop-in from a prior install.
+                FPP_NF_LIST=/etc/apt/sources.list.d/fpp-nonfree-firmware.list
+                if apt-cache policy firmware-misc-nonfree 2>/dev/null | grep -qE 'Candidate: [0-9]'; then
+                    rm -f "$FPP_NF_LIST"
+                else
+                    CODENAME="$(. /etc/os-release; echo "${VERSION_CODENAME:-trixie}")"
+                    cat > "$FPP_NF_LIST" <<EOF
+deb http://deb.debian.org/debian ${CODENAME} non-free-firmware
+deb http://deb.debian.org/debian ${CODENAME}-updates non-free-firmware
+deb http://security.debian.org/debian-security ${CODENAME}-security non-free-firmware
+EOF
+                    apt-get update
+                fi
                 PACKAGE_LIST="$PACKAGE_LIST ti-pru-cgt-v2.3"
             fi
         else
@@ -745,7 +765,28 @@ install_base_packages() {
             systemctl disable apt-daily.timer || true
             systemctl disable apt-daily-upgrade.service || true
             systemctl disable apt-daily-upgrade.timer || true
-            
+
+            # Disable stock Debian housekeeping that serves no purpose on a
+            # fixed-image appliance and just adds disk writes / boot-time work:
+            #   man-db.timer        - rebuilds the man page index (no man use)
+            #   dpkg-db-backup.timer- daily /var/lib/dpkg backup (image is fixed)
+            #   e2scrub_*           - online ext4 scrub for LVM (we don't use LVM)
+            #   systemd-pstore      - archives kernel crash pstore at every boot
+            #   wtmpdb-update-boot  - writes boot records to the wtmp database
+            echo "FPP - Disabling unneeded housekeeping timers/services"
+            systemctl disable man-db.timer || true
+            systemctl disable dpkg-db-backup.timer || true
+            systemctl disable e2scrub_all.timer || true
+            systemctl disable e2scrub_reap.service || true
+            systemctl disable systemd-pstore.service || true
+            systemctl disable wtmpdb-update-boot.service || true
+            # gpio-manager: the libgpiod 2.x D-Bus GPIO daemon (Debian 13's gpiod
+            # package). FPP drives GPIO via the libgpiod *library* directly and
+            # never uses this daemon. It's idle by default, but since GPIO line
+            # requests are exclusive it's a latent EBUSY risk if anything ever
+            # makes it claim a line -- so disable it (also saves a boot service).
+            systemctl disable gpio-manager.service || true
+
             echo "FPP - Enabling systemd-networkd"
             # clean out the links to /dev/null so that we can enable systemd-networkd
             rm -f /etc/systemd/network/99*
@@ -870,6 +911,22 @@ apt_purge_installed() {
     fi
 }
 
+# defer_bb_usb_gadgets
+# The stock BeagleBoard bb-usb-gadgets.service does a *blocking*
+# "systemctl start serial-getty@ttyGS0", which can sit ~35s waiting on the
+# getty/device and stalls the boot critical path -- delaying fppd. The USB
+# gadget (usb0 tether + serial console) is only a setup convenience, not used
+# in normal operation, so order it after fpp_postnetwork. fppd is also
+# After=fpp_postnetwork, so the gadget setup then runs in parallel with fppd
+# instead of holding it up.
+defer_bb_usb_gadgets() {
+    mkdir -p /etc/systemd/system/bb-usb-gadgets.service.d
+    cat > /etc/systemd/system/bb-usb-gadgets.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+}
+
 setup_platform_beaglebone_black() {
     # Blacklist gyro/barometer on SanCloud enhanced (conflicts with cape pins).
     cat > /etc/modprobe.d/blacklist-gyro.conf <<'EOF'
@@ -899,6 +956,11 @@ EOF
     systemctl disable unattended-upgrades
     systemctl disable resize_filesystem
     systemctl disable console-setup
+    # FPP uses smbd/nmbd for media file shares, never the AD domain controller.
+    systemctl disable samba-ad-dc || true
+    # No Bluetooth use on BeagleBone; kept enabled only on the Pi.
+    systemctl disable bluetooth || true
+    defer_bb_usb_gadgets
 }
 
 setup_platform_beaglebone_64() {
@@ -907,7 +969,11 @@ setup_platform_beaglebone_64() {
     systemctl disable mender-client
     systemctl disable resize_filesystem
     systemctl disable console-setup
-    systemctl disable samba-ad-dc
+    # FPP uses smbd/nmbd for media file shares, never the AD domain controller.
+    systemctl disable samba-ad-dc || true
+    # No Bluetooth use on BeagleBone; kept enabled only on the Pi.
+    systemctl disable bluetooth || true
+    defer_bb_usb_gadgets
 
     echo "FPP - Adding required modules to modules-load to speed up boot"
     cat >> /etc/modules-load.d/modules.conf <<'EOF'
@@ -946,9 +1012,23 @@ setup_platform_raspberry_pi() {
         sed -i -e "s/^odroid:.*/odroid:*:16372:0:99999:7:::/" /etc/shadow
         sed -i -e "s/^debian:.*/debian:*:16372:0:99999:7:::/" /etc/shadow
 
+        # FPP uses smbd/nmbd for media file shares, never the AD domain controller.
+        systemctl disable samba-ad-dc || true
+
         echo "FPP - Tweaking ${BOOTDIR}/config.txt"
         # Camera auto-detect off (we don't use it; saves a bit of boot time).
         sed -i -e "s/camera_auto_detect/#camera_auto_detect/"  ${BOOTDIR}/config.txt
+        # Cap the vc4-KMS CMA pool at 256MB. The firmware default on a Pi4 is
+        # 512MB, which on a 1GB board leaves so little general RAM that a
+        # parallel compile gets OOM-killed mid-build (issue #2679). 256MB is far
+        # more than FPP ever needs for DMA/GPU buffers (DPI framebuffers, kmssink
+        # dumb buffers, virtual matrices all fit comfortably). We modify the
+        # existing overlay line in place rather than adding a second
+        # dtoverlay=vc4-kms-v3d line -- loading the overlay twice would fail to
+        # apply, silently dropping the cma setting. Matches both the generic
+        # overlay (Pi0-4) and the -pi5 variant; skips a line that already
+        # specifies a cma- size so a user override is preserved.
+        sed -i '/^[[:space:]]*dtoverlay=vc4-kms-v3d/{/cma-/!s/$/,cma-256/}' ${BOOTDIR}/config.txt
         # NOTE: leave hdmi_force_hotplug alone. With the 6.18 vc4 KMS driver,
         # disabling it lets the GPU drop the HDMI signal entirely when the
         # kernel's hot-plug detection misses (which it does often enough on
@@ -1314,6 +1394,92 @@ do
     fi
 done
 
+# FPP serves very few web clients (usually one or two), so the stock
+# every-30-minutes PHP session garbage collection is overkill. Run it every
+# 2 hours instead, and turn off Persistent so a power-cycled appliance doesn't
+# fire a catch-up GC run on every boot -- that run was adding ~14s to the boot
+# critical path. The empty OnCalendar= first clears the inherited schedule.
+echo "FPP - Reducing phpsessionclean frequency"
+mkdir -p /etc/systemd/system/phpsessionclean.timer.d
+cat > /etc/systemd/system/phpsessionclean.timer.d/fpp.conf <<'EOF'
+[Timer]
+OnCalendar=
+OnCalendar=*-*-* 00/2:09:00
+Persistent=false
+EOF
+
+# The exim4 MTA is only used for occasional outbound notification mail, never at
+# boot. Starting it early costs ~25s on a single-core SBC because it does DNS
+# lookups before the network/resolver is ready (so they time out), and it just
+# adds contention on the boot critical path. Order it after fpp_postnetwork:
+# fppd is also After=fpp_postnetwork, so exim starts in parallel with fppd
+# rather than ahead of it, and by then DNS actually resolves so it comes up fast.
+echo "FPP - Deferring exim4 startup until after the network is up"
+mkdir -p /etc/systemd/system/exim4.service.d
+cat > /etc/systemd/system/exim4.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+
+# exim4-base.service is the daily exim queue/db housekeeping oneshot, triggered
+# by exim4-base.timer. With Persistent=true it fires a catch-up run on every
+# boot of a power-cycled appliance -- and it's slow there (DNS not ready yet),
+# just like exim4 was. Turn Persistent off so it only runs at the next daily
+# tick (when DNS is up and the near-empty queue makes it trivial), and order the
+# service after fpp_postnetwork for the rare case the daily timer fires during a
+# boot window.
+echo "FPP - Keeping exim4-base housekeeping off the boot path"
+mkdir -p /etc/systemd/system/exim4-base.timer.d
+cat > /etc/systemd/system/exim4-base.timer.d/fpp.conf <<'EOF'
+[Timer]
+Persistent=false
+EOF
+mkdir -p /etc/systemd/system/exim4-base.service.d
+cat > /etc/systemd/system/exim4-base.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+
+# ntpsec: fppinit's postNetwork now does a fast one-shot SNTP clock set, so the
+# ntpsec daemon isn't needed during the boot critical path -- it only refines
+# the clock afterwards. Start it after fpp_postnetwork so it's out of the
+# fppinit/networkd contention window on single-core SBCs.
+echo "FPP - Deferring ntpsec until after the clock is set in postNetwork"
+mkdir -p /etc/systemd/system/ntpsec.service.d
+cat > /etc/systemd/system/ntpsec.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+
+# apache2 + php-fpm back the web UI, which isn't needed before fppd. On a
+# single-core SBC they otherwise start alongside fpp_postnetwork and steal a
+# meaningful slice of CPU during it -- deferring them after fpp_postnetwork
+# measured ~2s off postNetwork and brought fppd up ~3s earlier on a BBB. They
+# then come up in parallel with fppd rather than contending with the network
+# setup. (Use $ACTUAL_PHPVER so this tracks the installed php-fpm version.)
+echo "FPP - Deferring apache2 and php-fpm until after the network setup"
+mkdir -p /etc/systemd/system/apache2.service.d
+cat > /etc/systemd/system/apache2.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+mkdir -p /etc/systemd/system/php${ACTUAL_PHPVER}-fpm.service.d
+cat > /etc/systemd/system/php${ACTUAL_PHPVER}-fpm.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fpp_postnetwork.service
+EOF
+
+# shellinabox: the web terminal is a convenience that's never needed at boot,
+# and its SysV init script takes ~6s (Type=forking) right in the postNetwork
+# window. Defer it until after fppd so it's fully off the critical path.
+# (It's a systemd-sysv-generator unit, but a drop-in still applies.)
+echo "FPP - Deferring shellinabox until after fppd"
+mkdir -p /etc/systemd/system/shellinabox.service.d
+cat > /etc/systemd/system/shellinabox.service.d/fpp-defer.conf <<'EOF'
+[Unit]
+After=fppd.service
+EOF
+
 if $isimage; then
     #######################################
     echo "FPP - Copying rsync daemon config files into place"
@@ -1442,6 +1608,11 @@ configure_ccache() {
     rm -f /root/.ccache/ccache.conf
     rm -f /root/.cache/ccache/ccache.conf
     mkdir -p /root/.cache/ccache /root/.config/ccache
+    # Pin both the cache dir and the config path explicitly. The image-build
+    # chroot can inherit a CCACHE_DIR pointing elsewhere; pinning it here keeps
+    # the populated cache at /root/.cache/ccache where build-image-*.sh tars it
+    # up for the release artifact, and keeps the config at the XDG path below.
+    export CCACHE_DIR=/root/.cache/ccache
     export CCACHE_CONFIGPATH=/root/.config/ccache/ccache.conf
     ccache -M 500M
     ccache --set-config=temporary_dir=/tmp
@@ -1465,7 +1636,20 @@ configure_ccache() {
     mkdir -p /home/fpp/.config/ccache
     cp /root/.config/ccache/ccache.conf /home/fpp/.config/ccache/ccache.conf
     chown -R fpp:fpp /home/fpp/.config
-    unset CCACHE_CONFIGPATH
+    # Deliberately leave CCACHE_CONFIGPATH exported for the rest of this
+    # installer run so the "make optimized" compile below reads THIS config.
+    # CCACHE_CONFIGPATH is the only config location with higher priority than
+    # everything else; without it, ccache picks its secondary config from
+    # $CCACHE_DIR/ccache.conf whenever CCACHE_DIR is set in the build
+    # environment (the image-build chroot inherits one) -- i.e.
+    # /root/.cache/ccache/ccache.conf, the file we just rm'd -- and NOT the
+    # XDG path we wrote the sloppiness settings to. With no sloppiness in
+    # effect, ccache refuses to cache any compile that pulls in the
+    # precompiled header ("Could not use precompiled header"), so the PCH and
+    # ~250 object files are all uncacheable and the cache shipped in the image
+    # is nearly empty/useless. This env var only lives in the build shell; it
+    # is not baked into the image, so on-device upgrade builds are unaffected
+    # (they read the XDG config by default).
 }
 
 configure_logging
@@ -1584,16 +1768,28 @@ EOF
 
         sed -i 's|tmpfs\s*/tmp\s*tmpfs.*||g' /etc/fstab
         sed -i 's|tmpfs\s*/var/tmp\s*tmpfs.*||g' /etc/fstab
+
+        # Defer the disk swap partition: mark it "noauto" so systemd does not
+        # activate it during boot. Otherwise swap.target waits for the swap
+        # device to be tagged by the slow single-core udev coldplug, and we wear
+        # the eMMC/SD by swapping to it during normal operation. zram remains the
+        # primary swap; fppinit's startDiskSwap() brings this partition up late
+        # (post-network), off the boot critical path, where it's still available
+        # for heavy jobs like compiling FPP. Idempotent: skips lines already
+        # carrying noauto.
+        sed -i -E '/noauto/!s;^([^#]\S+\s+\S+\s+swap\s+)(\S+)(\s+[0-9]+\s+[0-9]+\s*)$;\1\2,noauto\3;' /etc/fstab
     fi
 
-    COMMENTED=""
-    SDA1=$(lsblk -l | grep sda1 | awk '{print $7}')
-    if [ -n "${SDA1}" ]
-    then
-        COMMENTED="#"
-    fi
+    # /home/fpp/media lives on an external drive only when the user explicitly
+    # selects one in the Storage settings (uncommon). Ship the fstab entry
+    # COMMENTED: otherwise systemd's fstab generator creates home-fpp-media.mount
+    # for a /dev/sda1 that isn't present, and the dev-sda1.device job sits for the
+    # full 90s device timeout before failing. fppinit.service (After=/Wants= that
+    # mount) -- and everything ordered behind networking -- then waits out that
+    # 90s on every boot. The settings UI rewrites this line when external storage
+    # is chosen, so commenting it by default loses no functionality.
     echo "#####################################" >> /etc/fstab
-    echo "${COMMENTED}/dev/sda1     ${FPPHOME}/media  auto    defaults,nonempty,noatime,nodiratime,exec,nofail,flush,uid=500,gid=500  0  0" >> /etc/fstab
+    echo "#/dev/sda1     ${FPPHOME}/media  auto    defaults,nonempty,noatime,nodiratime,exec,nofail,flush,uid=500,gid=500  0  0" >> /etc/fstab
     echo "#####################################" >> /etc/fstab
 
     #######################################
@@ -1766,6 +1962,11 @@ install_fpp_services() {
     cp -a /opt/fpp/etc/pipewire/pipewire.conf.d/. /etc/pipewire/pipewire.conf.d/
     mkdir -p /etc/wireplumber/wireplumber.conf.d
     cp -a /opt/fpp/etc/wireplumber/wireplumber.conf.d/. /etc/wireplumber/wireplumber.conf.d/
+    # FPP WirePlumber Lua hooks (static, e.g. the combine-stream fallback blocker)
+    if [ -d /opt/fpp/etc/wireplumber/scripts ]; then
+        mkdir -p /usr/share/wireplumber/scripts
+        cp -a /opt/fpp/etc/wireplumber/scripts/. /usr/share/wireplumber/scripts/
+    fi
     # Clean up old WirePlumber 0.4 Lua configs if present
     rm -rf /etc/wireplumber/main.lua.d
     if [ ! -f /etc/pipewire/pipewire.conf ] && [ -f /usr/share/pipewire/pipewire.conf ]; then
@@ -1784,14 +1985,36 @@ install_fpp_services() {
     fi
 
     systemctl disable mosquitto
+    # haveged is only needed to seed entropy for first-boot SSH host-key
+    # generation on a board with no hardware RNG. fppinit no longer orders after
+    # it (it orders after local-fs.target) and checkSSHKeys starts it on demand
+    # in that no-RNG case, so it doesn't need to run on every boot -- disable it
+    # to keep its ~entropy-gathering startup off the boot path. Every FPP target
+    # has a hardware RNG (AM335x omap-rng, bcm2835-rng, ...), so it stays idle.
+    systemctl disable haveged.service 2>/dev/null || true
     systemctl daemon-reload
 
     local svc
-    for svc in fppinit fpprtc fppoled fppd fpp_postnetwork \
-               fpp-install-kiosk fpp-reboot \
-               fpp-pipewire fpp-wireplumber fpp-pipewire-pulse; do
+    for svc in fpp-early-block-trigger fppinit fpprtc fppoled fppd fpp_postnetwork \
+               fpp-install-kiosk fpp-reboot fpp-announce-ip; do
+        # fpp-install-kiosk sets up the local on-device browser UI shown over
+        # HDMI. BeagleBones run headless with HDMI disabled, so it would never
+        # be used there -- skip it (and disable, in case a prior run enabled it).
+        if [ "$svc" = "fpp-install-kiosk" ] && \
+           { [ "$FPPPLATFORM" = "BeagleBone Black" ] || [ "$FPPPLATFORM" = "BeagleBone 64" ]; }; then
+            systemctl disable ${svc}.service 2>/dev/null || true
+            continue
+        fi
         systemctl enable ${svc}.service
     done
+
+    # The PipeWire stack is intentionally NOT enabled. FPPINIT's setupAudio starts
+    # fpp-pipewire/fpp-wireplumber/fpp-pipewire-pulse on demand (from its audio
+    # thread) after it has written/validated the audio config, so PipeWire reads
+    # the correct graph on its first and only start rather than coming up empty at
+    # sound.target and needing a restart. Disable explicitly to undo any prior
+    # enablement.
+    systemctl disable fpp-pipewire.service fpp-wireplumber.service fpp-pipewire-pulse.service 2>/dev/null || true
 }
 
 # Image-only tweaks that happen after FPP services are installed/enabled.
@@ -1812,6 +2035,17 @@ finalize_image_services() {
 if $isimage; then
     rm -rf /usr/share/doc/*
     apt-get clean
+
+    # The image-build CI checks out the source tree into /opt/fpp as a non-root
+    # build user, so every tracked file is owned by that uid (e.g. 1001). On a
+    # shipped image /opt/fpp is system software and must be root:root -- both for
+    # correctness and because anything copied out of the tree with "cp -a"
+    # (preserving ownership) would otherwise carry the build uid into /etc. A
+    # concrete failure: networkd-dispatcher refuses to run hooks in directories
+    # not owned by root, which broke the routable.d/ntpd fast time-sync hook.
+    # Do this before install_fpp_services so its copies inherit root ownership.
+    echo "FPP - Setting root:root ownership on /opt/fpp"
+    chown -R root:root /opt/fpp
 fi
 
 install_fpp_services
@@ -1845,8 +2079,13 @@ configure_hostapd() {
 #     that handles zram setup automatically. Don't write zram-tools config
 #     on Pi -- it's read by a service we'd be disabling, and would just be
 #     dead clutter.
-#   - On BeagleBone (BBB / BB64) we still drive zram via zram-tools because
-#     rcn-ee Debian doesn't ship the rpi-swap mechanism.
+#   - On BeagleBone (BBB / BB64) we drive zram via zram-tools, set up directly
+#     in fpp_postnetwork (FPPINIT startZRAMSwap) rather than at boot. zram isn't
+#     needed early and setting it up during the boot critical path just adds
+#     contention on the single core. NOTE: the rcn-ee Debian 13 image now ships
+#     systemd-zram-generator (the same systemd-zram-setup@zram0 mechanism Pi
+#     uses), which WOULD otherwise create /dev/zram0 in early boot, so we disable
+#     its vendor config below.
 configure_swap() {
     if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
         # Just sysctl tuning; rpi-swap handles the actual zram device.
@@ -1857,7 +2096,18 @@ configure_swap() {
         # /dev/zram0 at boot (both try to claim the device).
         systemctl disable zramswap 2>/dev/null || true
     else
+        # Disable the systemd-zram-generator vendor config so it does NOT create
+        # /dev/zram0 during early boot. zram-tools (driven by startZRAMSwap in
+        # fpp_postnetwork) sets it up later, off the boot critical path. Per
+        # zram-generator.conf(5), symlinking the vendor config's filename to
+        # /dev/null in /etc disables it.
+        ln -sf /dev/null /etc/systemd/zram-generator.conf
         systemctl disable zramswap
+        # The stock zram-tools config ships PERCENT=50, which (per its own
+        # comment) takes precedence over SIZE -- so our SIZE= below would be
+        # ignored and zram would grab 50% of RAM. Disable PERCENT so our fixed
+        # SIZE actually applies.
+        sed -i 's/^PERCENT=/#PERCENT=/' /etc/default/zramswap
         echo "ALGO=zstd" >> /etc/default/zramswap
         echo "PRIORITY=100" >> /etc/default/zramswap
         if [ "$FPPPLATFORM" == "BeagleBone 64" ]; then
