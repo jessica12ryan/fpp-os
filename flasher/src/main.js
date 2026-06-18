@@ -438,7 +438,7 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
     for (let attempt = 0; attempt < 3; attempt++) {
       let password
       try { password = await promptForPassword() }
-      catch (e) { throw new Error(e.message === 'Authentication cancelled' ? 'Flashing cancelled' : e.message) }
+      catch (e) { throw new Error(e.message === 'Authentication cancelled' ? 'Flashing cancelled' : e.message, { cause: e }) }
 
       try {
         await flashWithProgress(imagePath, device, rawDevice, isZip, password)
@@ -451,7 +451,8 @@ ipcMain.handle('flash-drive', async (_event, imagePath, device) => {
             'Open System Settings → Privacy & Security → Full Disk Access,\n' +
             'click + and add "FPP Flasher.app", then retry.\n\n' +
             'Or run from Terminal:\n' +
-            '  sudo "/Applications/FPP Flasher.app/Contents/MacOS/FPP Flasher"'
+            '  sudo "/Applications/FPP Flasher.app/Contents/MacOS/FPP Flasher"',
+            { cause: e }
           )
         }
         throw e
