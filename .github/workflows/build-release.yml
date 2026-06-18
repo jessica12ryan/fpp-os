@@ -29,10 +29,41 @@ env:
   FPP_INSTALL_BRANCH: ${{ github.event.inputs.fpp_install_branch || 'master' }}
         
 jobs:
+  lint:
+    name: Lint (Shellcheck + ESLint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck on shell scripts
+        run: |
+          find . -name '*.sh' -not -path './.git/*' -not -path './flasher/*' -not -path './SD/FPP_Install.sh' | xargs shellcheck -x --severity=error
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: flasher/package-lock.json
+
+      - name: Install flasher dependencies
+        working-directory: flasher
+        run: npm ci
+
+      - name: Run ESLint
+        working-directory: flasher
+        run: npx eslint src/
+
   build-iso:
     name: Build FPP-OS ISO
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    needs: lint
 
     permissions:
       contents: write
@@ -147,6 +178,13 @@ jobs:
           cat "${ISO_FILE}.sha256"
           cat "${ISO_FILE}.md5"
 
+      - name: Generate VM script checksums
+        run: |
+          cd vmscripts
+          sha256sum *.sh *.ps1 *.py > ../vm-scripts.sha256 2>/dev/null || true
+          cat ../vm-scripts.sha256
+          cd ..
+
       - name: Update CHANGELOG.md to ${{ steps.version.outputs.version }}
         run: |
           git fetch --tags
@@ -224,6 +262,7 @@ jobs:
             ${{ env.ISO_FILE }}
             ${{ env.ISO_FILE }}.sha256
             ${{ env.ISO_FILE }}.md5
+            vm-scripts.sha256
           draft: false
           prerelease: false
 

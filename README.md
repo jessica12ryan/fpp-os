@@ -106,9 +106,9 @@ This guide covers installation on:
 
 1. Log into Proxmox web UI.
 2. Open your host shell
-3. Run the following command
+3. Run the following command:
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-proxmox.sh)"
+curl -fsSL -o fpp-os-proxmox.sh https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-proxmox.sh && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && sha256sum -c <(grep fpp-os-proxmox.sh vm-scripts.sha256) && bash fpp-os-proxmox.sh
 ```
 4. Follow the prompts to create a VM
 5. Install will start in VM
@@ -129,9 +129,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/lat
 #### Steps
 
 1. Open macOS Terminal, Linux Terminal, or Windows PowerShell
-2. Run the following command
+2. Run the following command (on macOS replace `sha256sum` with `shasum -a 256`):
+Windows/Linux:
 ```
-python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vbox.py').read())"
+curl -fsSL -o fpp-os-vbox.py https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vbox.py && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && sha256sum -c <(grep fpp-os-vbox.py vm-scripts.sha256) && python3 fpp-os-vbox.py
+```
+macOS:
+```
+curl -fsSL -o fpp-os-vbox.py https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vbox.py && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && shasum -a 256 -c <(grep fpp-os-vbox.py vm-scripts.sha256) && python3 fpp-os-vbox.py
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
@@ -152,9 +157,9 @@ python3 -c "import urllib.request; exec(urllib.request.urlopen('https://raw.gith
 #### Steps
 
 1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
-2. Run the following command
+2. Run the following command:
 ```
-iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vmwarewks.ps1" -UseBasicParsing).Content
+$s="fpp-os-vmwarewks.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match $s)[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
@@ -179,9 +184,9 @@ apt update && apt install open-vm-tools -y
 #### Steps
 
 1. Open macOS Terminal
-2. Run the following command
+2. Run the following command:
 ```
-curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vmfusion.sh | bash
+curl -fsSL -o fpp-os-vmfusion.sh https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vmfusion.sh && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && shasum -a 256 -c <(grep fpp-os-vmfusion.sh vm-scripts.sha256) && bash fpp-os-vmfusion.sh
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
@@ -206,9 +211,9 @@ apt update && apt install open-vm-tools -y
 #### Steps
 
 1. Open macOS Terminal
-2. Run the following command
+2. Run the following command:
 ```
-curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-parallels.sh | bash
+curl -fsSL -o fpp-os-parallels.sh https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-parallels.sh && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && shasum -a 256 -c <(grep fpp-os-parallels.sh vm-scripts.sha256) && bash fpp-os-parallels.sh
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM. Open Parallels Desktop to continue
@@ -229,9 +234,9 @@ curl -fsSL https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscrip
 #### Steps
 
 1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
-2. Run the following command
+2. Run the following command:
 ```
-iex (Invoke-WebRequest -Uri "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-hyperv.ps1" -UseBasicParsing).Content
+$s="fpp-os-hyperv.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match $s)[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM

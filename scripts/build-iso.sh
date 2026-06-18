@@ -66,6 +66,8 @@ download_iso() {
     info "Fetching latest Debian ${DEBIAN_VERSION} (trixie) netinst ISO..."
 
     local iso_url=""
+    local iso_filename=""
+    local sums_url=""
 
     # Try stable release first
     local stable_base="https://cdimage.debian.org/cdimage/release/current/${ARCH}/iso-cd"
@@ -74,6 +76,8 @@ download_iso() {
         | grep -oP "debian-[\d.]+-${ARCH}-netinst\.iso" | head -1 || true)
     if [[ -n "$stable_iso" ]]; then
         iso_url="${stable_base}/${stable_iso}"
+        iso_filename="${stable_iso}"
+        sums_url="${stable_base}/SHA256SUMS"
         info "Found stable ISO: $stable_iso"
     fi
 
@@ -82,11 +86,35 @@ download_iso() {
         warn "Stable trixie not yet released — using daily build..."
         local daily_base="https://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/${ARCH}/iso-cd"
         iso_url="${daily_base}/debian-testing-${ARCH}-netinst.iso"
+        iso_filename="debian-testing-${ARCH}-netinst.iso"
+        sums_url="${daily_base}/SHA256SUMS"
     fi
 
     info "Downloading: $iso_url"
     curl -L --progress-bar -o "${ORIGINAL_ISO}" "$iso_url" \
         || error "Download failed."
+
+    # Verify SHA256 checksum
+    info "Downloading checksums from: $sums_url"
+    local sums_file="${WORK_DIR}/SHA256SUMS"
+    if curl -sfL -o "${sums_file}" "$sums_url"; then
+        local expected_sha256
+        expected_sha256=$(grep " ${iso_filename}$" "${sums_file}" | awk '{print $1}')
+        if [[ -n "$expected_sha256" ]]; then
+            info "Verifying SHA256 checksum..."
+            local actual_sha256
+            actual_sha256=$(sha256sum "${ORIGINAL_ISO}" | awk '{print $1}')
+            if [[ "$actual_sha256" == "$expected_sha256" ]]; then
+                info "✓ SHA256 verification passed"
+            else
+                error "SHA256 verification failed! Expected: ${expected_sha256}, Got: ${actual_sha256}"
+            fi
+        else
+            warn "Could not find checksum for ${iso_filename} in SHA256SUMS — skipping verification"
+        fi
+    else
+        warn "Failed to download SHA256SUMS — skipping checksum verification"
+    fi
 
     # Basic sanity check
     file "${ORIGINAL_ISO}" | grep -qi "ISO 9660\|CD-ROM\|ISO image" \

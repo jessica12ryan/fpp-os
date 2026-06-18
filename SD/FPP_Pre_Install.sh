@@ -1,3 +1,4 @@
+#!/bin/bash
 echo "FPP (Falcon Player) is about to be installed momentarily."
 echo "Checking for internet connectivity..."
 

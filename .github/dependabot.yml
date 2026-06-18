@@ -1,8 +1,13 @@
 version: 2
 updates:
-  - package-ecosystem: ""
-    directory: "/"
+  - package-ecosystem: "npm"
+    directory: "/flasher"
     schedule:
       interval: "weekly"
     exclude-paths:
       - "SD/FPP_Install.sh"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
