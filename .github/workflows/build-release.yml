@@ -302,7 +302,7 @@ jobs:
           git push origin latest --force
 
       - name: Upload ISO as artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fpp-os-iso
           path: |
