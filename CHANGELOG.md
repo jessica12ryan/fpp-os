@@ -1,3 +1,28 @@
+## [0.2.0] - 2026-06-18
+
+- Updates to fix eslint (jessica12ryan)
+- Merge pull request #8 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-42.4.1 (jessica12ryan)
+- Bump electron from 39.8.5 to 42.4.1 in /flasher (dependabot[bot])
+- Merge pull request #7 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-builder-26.15.3 (jessica12ryan)
+- Bump electron-builder from 26.8.1 to 26.15.3 in /flasher (dependabot[bot])
+- Merge pull request #9 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-7a928b3dc5 (jessica12ryan)
+- Merge pull request #6 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.5.0 (jessica12ryan)
+- Merge pull request #5 from jessica12ryan/dependabot/github_actions/actions/checkout-6 (jessica12ryan)
+- Merge pull request #4 from jessica12ryan/dependabot/github_actions/actions/upload-artifact-7 (jessica12ryan)
+- Bump the npm_and_yarn group across 1 directory with 3 updates (dependabot[bot])
+- Bump eslint from 8.57.1 to 10.5.0 in /flasher (dependabot[bot])
+- Bump actions/checkout from 5 to 6 (dependabot[bot])
+- Bump actions/upload-artifact from 6 to 7 (dependabot[bot])
+- Multiple enhancements (jessica12ryan)
+- Update README with FPP-HA repository link (jessica12ryan)
+- Update README.md (jessica12ryan)
+- Update README.md (jessica12ryan)
+- Update README.md (jessica12ryan)
+- Update README.md (jessica12ryan)
+- Update CHANGELOG.md - cleaning up (jessica12ryan)
+
+---
+
 ## [0.1.27] - 2026-06-01
 
 - Fix flashing on windows and autoupdater on mac (jessica12ryan)
