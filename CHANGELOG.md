@@ -1,3 +1,9 @@
+## [0.2.2] - 2026-06-18
+
+- Add files via upload (jessica12ryan)
+
+---
+
 ## [0.2.1] - 2026-06-18
 
 - Improve error handling for authentication cancellation (jessica12ryan)
