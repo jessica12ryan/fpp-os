@@ -170,6 +170,20 @@
     line-height:1.5; margin-top:8px;
   }
 
+  /* ── Release type toggle ── */
+  .release-type-toggle {
+    display:flex; gap:6px; margin: -4px 0 10px;
+  }
+  .release-type-btn {
+    flex:1; padding:6px 10px;
+    border:1px solid var(--border); border-radius:5px;
+    background:transparent; color:var(--muted);
+    font-family:var(--sans); font-size:11px; font-weight:600;
+    cursor:pointer; transition:all .15s; text-align:center;
+  }
+  .release-type-btn:hover { color:var(--text); border-color:var(--accent); }
+  .release-type-btn.active { background:rgba(249,115,22,.1); border-color:var(--accent); color:var(--accent); }
+
   /* ── Progress ── */
   .progress-wrap { display:none; flex-direction:column; gap:6px; flex-shrink:0; }
   .progress-wrap.visible { display:flex; }
@@ -303,6 +317,10 @@
   <div class="tab-panel hidden" id="panelSD">
 
     <div class="card">
+      <div class="release-type-toggle">
+        <button class="release-type-btn active" id="relStable" onclick="setReleaseType('stable')">Stable</button>
+        <button class="release-type-btn" id="relDev" onclick="setReleaseType('development')">Development (Nightly)</button>
+      </div>
       <div class="card-label">FPP Release &amp; Platform</div>
       <div class="release-row" style="margin-bottom:12px">
         <div class="release-badge" id="sdVersion">—</div>
@@ -317,6 +335,9 @@
         </button>
         <button class="platform-btn" id="plBB64" onclick="setPlatform('bb64')">
           <span class="icon">🦴</span>BB64
+        </button>
+        <button class="platform-btn" id="plPi64" onclick="setPlatform('pi64')" style="display:none">
+          <span class="icon">🍓</span>Pi 64 Bit
         </button>
       </div>
       <div class="variant-row">
@@ -366,6 +387,7 @@
   // ── State ─────────────────────────────────────────────────────────────────────
   let mode            = 'usb'
   let currentPlatform = 'pi'
+  let releaseType     = 'stable'
   let usbRelease      = null
   let sdRelease       = null
   let usbDrive        = null
@@ -398,6 +420,9 @@
     plPi:            document.getElementById('plPi'),
     plBB:            document.getElementById('plBB'),
     plBB64:          document.getElementById('plBB64'),
+    plPi64:          document.getElementById('plPi64'),
+    relStable:       document.getElementById('relStable'),
+    relDev:          document.getElementById('relDev'),
     variantSelect:   document.getElementById('variantSelect'),
     sdDriveSelect:   document.getElementById('sdDriveSelect'),
     sdRefreshDrives: document.getElementById('sdRefreshDrives'),
@@ -500,11 +525,36 @@
   // ── Platform switching ────────────────────────────────────────────────────────
   function setPlatform(p) {
     currentPlatform = p
-    el.plPi.classList.toggle('active',   p === 'pi')
-    el.plBB.classList.toggle('active',   p === 'bb')
-    el.plBB64.classList.toggle('active', p === 'bb64')
+    el.plPi.classList.toggle('active',    p === 'pi')
+    el.plBB.classList.toggle('active',    p === 'bb')
+    el.plBB64.classList.toggle('active',  p === 'bb64')
+    el.plPi64.classList.toggle('active',  p === 'pi64')
     populateVariants()
     updateButton()
+  }
+
+  function updatePlatformGrid() {
+    if (!sdRelease) return
+    const hasPi64 = sdRelease.images.some(i => i.platform === 'pi64')
+    el.plPi64.style.display = hasPi64 ? '' : 'none'
+    const grid = document.querySelector('.platform-grid')
+    grid.style.gridTemplateColumns = hasPi64 ? 'repeat(4,1fr)' : 'repeat(3,1fr)'
+    if (currentPlatform === 'pi64' && !hasPi64) {
+      setPlatform('pi')
+    }
+  }
+
+  function setReleaseType(type) {
+    if (type === releaseType) return
+    if (phase === 'downloading' || phase === 'flashing') return
+    releaseType = type
+    el.relStable.classList.toggle('active', type === 'stable')
+    el.relDev.classList.toggle('active',   type === 'development')
+    sdRelease = null
+    el.sdVersion.textContent = '—'
+    el.sdMeta.textContent = 'Loading...'
+    el.variantSelect.innerHTML = '<option value="">— Loading images... —</option>'
+    loadSDRelease()
   }
 
   function populateVariants() {
@@ -554,13 +604,14 @@
   // ── Load SD release ───────────────────────────────────────────────────────────
   async function loadSDRelease() {
     el.sdMeta.textContent = 'Fetching FPP release...'
-    appendLog(el.sdLog, 'Fetching FPP SD images from FalconChristmas/fpp...')
+    appendLog(el.sdLog, `Fetching FPP SD images (${releaseType}) from FalconChristmas/fpp...`)
     try {
-      sdRelease = await window.fpp.getFPPRelease()
+      sdRelease = await window.fpp.getFPPReleaseByType(releaseType)
       el.sdVersion.textContent = sdRelease.version || '—'
       el.sdMeta.innerHTML = `<span>${sdRelease.images.length}</span> images available`
       appendLog(el.sdLog, `FPP ${sdRelease.version} — ${sdRelease.images.length} SD images found`, 'ok')
       populateVariants()
+      updatePlatformGrid()
     } catch (e) {
       el.sdMeta.textContent = 'Failed to fetch FPP release'
       appendLog(el.sdLog, `Error: ${e.message}`, 'err')
@@ -725,9 +776,8 @@
         btn.disabled = true
         try {
           const path = await window.fpp.downloadFlasherUpdate(info.downloadUrl, info.downloadName)
-          btn.textContent = 'Open DMG'
-          btn.disabled = false
-          btn.onclick = () => window.fpp.openFlasherDmg(path)
+          btn.textContent = 'Restarting...'
+          window.fpp.installAndRestart(path)
         } catch {
           btn.textContent = 'Failed — retry'
           btn.disabled = false

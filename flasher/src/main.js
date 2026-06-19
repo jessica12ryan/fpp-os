@@ -76,12 +76,15 @@ ipcMain.handle('get-latest-release', async () => {
   })
 })
 
-// ── Get latest FPP release for SD card flashing ───────────────────────────────
-ipcMain.handle('get-fpp-release', async () => {
+// ── Get FPP release for SD card flashing (stable or development/nightly) ─────
+ipcMain.handle('get-fpp-release-by-type', async (_event, releaseType) => {
+  const apiPath = releaseType === 'development'
+    ? '/repos/FalconChristmas/fpp/releases/tags/nightly'
+    : '/repos/FalconChristmas/fpp/releases/latest'
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'api.github.com',
-      path: '/repos/FalconChristmas/fpp/releases/latest',
+      path: apiPath,
       headers: {
         'User-Agent': 'fpp-flasher',
         'Accept': 'application/vnd.github.v3+json',
@@ -101,9 +104,10 @@ ipcMain.handle('get-fpp-release', async () => {
               url:  a.browser_download_url,
               size: a.size,
               platform: a.name.includes('BB64') ? 'bb64'
-                : a.name.includes('BBB')  ? 'bb'
-                  : a.name.includes('Pi')   ? 'pi'
-                    : 'other'
+                : a.name.includes('BBB')   ? 'bb'
+                  : a.name.includes('Pi64') ? 'pi64'
+                    : a.name.includes('Pi')   ? 'pi'
+                      : 'other'
             }))
           resolve({ version: release.tag_name, images })
         } catch (e) { reject(e) }
@@ -397,9 +401,9 @@ ipcMain.handle('check-flasher-update', async () => {
   })
 })
 
-// ── Download flasher update DMG to Desktop ──────────────────────────────────
+// ── Download flasher update DMG to Downloads ────────────────────────────────
 ipcMain.handle('download-flasher-update', async (_event, url, name) => {
-  const dest = path.join(app.getPath('desktop'), name)
+  const dest = path.join(app.getPath('downloads'), name)
   return new Promise((resolve, reject) => {
     const follow = u => {
       const mod = u.startsWith('https') ? https : http
@@ -419,12 +423,55 @@ ipcMain.handle('download-flasher-update', async (_event, url, name) => {
   })
 })
 
-// ── Open flasher update file ──────────────────────────────────────────────────
-ipcMain.handle('open-flasher-dmg', (_event, dmgPath) => {
-  const openCmd = process.platform === 'darwin' ? 'open'
-    : process.platform === 'win32' ? 'start ""'
-      : 'xdg-open'
-  exec(`${openCmd} "${dmgPath}"`)
+// ── Install flasher update and restart ────────────────────────────────────────
+ipcMain.handle('install-and-restart', async (_event, updatePath) => {
+  const platform = process.platform
+  const tmpScript = path.join(app.getPath('temp'), 'fpp-update.' + (platform === 'win32' ? 'bat' : 'sh'))
+
+  if (platform === 'darwin') {
+    // macOS: mount DMG → copy app → unmount → launch new version
+    const script = `#!/bin/bash
+sleep 2
+DMG="${updatePath}"
+MOUNT=$(hdiutil attach -nobrowse "$DMG" 2>/dev/null | tail -1 | awk '{print $3}')
+if [ -d "$MOUNT/FPP Flasher.app" ]; then
+  if [ -d "/Applications/FPP Flasher.app" ]; then
+    rm -rf "/Applications/FPP Flasher.app"
+  fi
+  ditto "$MOUNT/FPP Flasher.app" "/Applications/FPP Flasher.app"
+  hdiutil detach "$MOUNT" -quiet 2>/dev/null
+  rm -f "$DMG"
+  open "/Applications/FPP Flasher.app"
+fi`
+    fs.writeFileSync(tmpScript, script, 'utf8')
+    fs.chmodSync(tmpScript, '755')
+    exec(`nohup "${tmpScript}" > /dev/null 2>&1 &`)
+    app.exit(0)
+  } else if (platform === 'win32') {
+    // Windows: run installer silently → launch updated app
+    const script = `@echo off
+timeout /t 3 /nobreak >nul
+start /wait "" "${updatePath}" /S
+if exist "%ProgramFiles%\\FPP Flasher\\FPP Flasher.exe" (
+  start "" "%ProgramFiles%\\FPP Flasher\\FPP Flasher.exe"
+) else if exist "%LocalAppData%\\Programs\\FPP Flasher\\FPP Flasher.exe" (
+  start "" "%LocalAppData%\\Programs\\FPP Flasher\\FPP Flasher.exe"
+)`
+    fs.writeFileSync(tmpScript, script, 'utf8')
+    exec(`start "" /B "${tmpScript}"`)
+    app.exit(0)
+  } else {
+    // Linux: replace AppImage → make executable → launch
+    const script = `#!/bin/bash
+sleep 2
+chmod +x "${updatePath}"
+rm -f /tmp/.mount-*
+"${updatePath}" &`
+    fs.writeFileSync(tmpScript, script, 'utf8')
+    fs.chmodSync(tmpScript, '755')
+    exec(`nohup "${tmpScript}" > /dev/null 2>&1 &`)
+    app.exit(0)
+  }
 })
 
 // ── Flash ISO to drive ────────────────────────────────────────────────────────
