@@ -116,7 +116,11 @@ curl -fsSL -o fpp-os-proxmox.sh https://raw.githubusercontent.com/jessica12ryan/
 7. Installation of OS finishes and warns to remove install media and the system shuts down
 8. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 9. System will reboot when completed
-10. See [Post-Installation](#post-installation) for next steps
+10. After reboot, login as root with password falcon, and run the following command
+```
+apt update && apt install qemu-guest-agent -y && systemctl enable qemu-guest-agent
+```
+11. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -130,6 +134,7 @@ curl -fsSL -o fpp-os-proxmox.sh https://raw.githubusercontent.com/jessica12ryan/
 
 1. Open macOS Terminal, Linux Terminal, or Windows PowerShell
 2. Run the following command (on macOS replace `sha256sum` with `shasum -a 256`):
+
 Windows/Linux:
 ```
 curl -fsSL -o fpp-os-vbox.py https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/fpp-os-vbox.py && curl -fsSL -o vm-scripts.sha256 https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256 && sha256sum -c <(grep fpp-os-vbox.py vm-scripts.sha256) && python3 fpp-os-vbox.py
@@ -141,10 +146,14 @@ curl -fsSL -o fpp-os-vbox.py https://raw.githubusercontent.com/jessica12ryan/fpp
 3. Follow the prompts to create a VM
 4. Install will start in VM
 5. Confirm VM disk will be overwritten by selecting yes, then wait for OS to finish installing
-6. Installation of OS and warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
+6. Installation of OS finishes warns to remove install media and the system shuts down (VirtualBox usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+9. After reboot, login as root with password falcon, and run the following command
+```
+apt update && apt install virtualbox-guest-utils -y
+```
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -159,7 +168,7 @@ curl -fsSL -o fpp-os-vbox.py https://raw.githubusercontent.com/jessica12ryan/fpp
 1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
 2. Run the following command:
 ```
-$s="fpp-os-vmwarewks.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match $s)[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
+$s="fpp-os-vmwarewks.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match [regex]::Escape($s))[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
@@ -221,7 +230,11 @@ curl -fsSL -o fpp-os-parallels.sh https://raw.githubusercontent.com/jessica12rya
 6. Installation of OS and warns to remove install media and the system shuts down (Parallels usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+9. After reboot, login as root with password falcon, and run the following command
+```
+apt update && apt install parallels-tools -y
+```
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---
@@ -236,7 +249,7 @@ curl -fsSL -o fpp-os-parallels.sh https://raw.githubusercontent.com/jessica12rya
 1. Open PowerShell as Administrator (WIN+X, Select PowerShell (Admin) or Terminal (Admin))
 2. Run the following command:
 ```
-$s="fpp-os-hyperv.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match $s)[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
+$s="fpp-os-hyperv.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/jessica12ryan/fpp-os/latest/vmscripts/$s"; curl.exe -fsSL -o "v.sha256" "https://github.com/jessica12ryan/fpp-os/releases/latest/download/vm-scripts.sha256"; $e=((gc v.sha256) -match [regex]::Escape($s))[0] -split ' '|select -first 1; if((Get-FileHash $s -Alg SHA256).Hash -eq $e){& $s}else{throw "Checksum mismatch"}
 ```
 3. Follow the prompts to create a VM
 4. Install will start in VM
@@ -244,7 +257,11 @@ $s="fpp-os-hyperv.ps1"; curl.exe -fsSL -o $s "https://raw.githubusercontent.com/
 6. Installation of OS and warns to remove install media and the system shuts down (Hyper-V usually does this automatically)
 7. On first boot, FPP is installed automatically — this may take 10–30 minutes depending on internet speed
 8. System will reboot when completed
-9. See [Post-Installation](#post-installation) for next steps
+9. After reboot, login as root with password falcon, and run the following command
+```
+apt update && apt install linux-image-virtual hv-kvp-daemon-init -y
+```
+10. See [Post-Installation](#post-installation) for next steps
 
 
 ---
