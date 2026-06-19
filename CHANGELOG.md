@@ -1,3 +1,9 @@
+## [0.2.4] - 2026-06-19
+
+- Refactor platform buttons and update platform logic (jessica12ryan)
+
+---
+
 ## [0.2.3] - 2026-06-19
 
 - Add ability to flash dev fpp build to SD, and updates to automatic updates (jessica12ryan)
