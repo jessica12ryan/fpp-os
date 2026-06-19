@@ -327,17 +327,17 @@
         <div class="release-meta" id="sdMeta">Switch to this tab to load FPP releases...</div>
       </div>
       <div class="platform-grid">
+        <button class="platform-btn" id="plPi64" onclick="setPlatform('pi64')" style="display:none">
+          <span class="icon">🍓</span>Raspberry Pi (64 Bit)
+        </button>
         <button class="platform-btn active" id="plPi" onclick="setPlatform('pi')">
           <span class="icon">🍓</span>Raspberry Pi
         </button>
+        <button class="platform-btn" id="plBB64" onclick="setPlatform('bb64')">
+          <span class="icon">🦴</span>BeagleBone (64 Bit)
+        </button>
         <button class="platform-btn" id="plBB" onclick="setPlatform('bb')">
           <span class="icon">🦴</span>BeagleBone
-        </button>
-        <button class="platform-btn" id="plBB64" onclick="setPlatform('bb64')">
-          <span class="icon">🦴</span>BB64
-        </button>
-        <button class="platform-btn" id="plPi64" onclick="setPlatform('pi64')" style="display:none">
-          <span class="icon">🍓</span>Pi 64 Bit
         </button>
       </div>
       <div class="variant-row">
@@ -525,10 +525,10 @@
   // ── Platform switching ────────────────────────────────────────────────────────
   function setPlatform(p) {
     currentPlatform = p
-    el.plPi.classList.toggle('active',    p === 'pi')
-    el.plBB.classList.toggle('active',    p === 'bb')
-    el.plBB64.classList.toggle('active',  p === 'bb64')
     el.plPi64.classList.toggle('active',  p === 'pi64')
+    el.plPi.classList.toggle('active',    p === 'pi')
+    el.plBB64.classList.toggle('active',  p === 'bb64')
+    el.plBB.classList.toggle('active',    p === 'bb')
     populateVariants()
     updateButton()
   }
@@ -539,9 +539,6 @@
     el.plPi64.style.display = hasPi64 ? '' : 'none'
     const grid = document.querySelector('.platform-grid')
     grid.style.gridTemplateColumns = hasPi64 ? 'repeat(4,1fr)' : 'repeat(3,1fr)'
-    if (currentPlatform === 'pi64' && !hasPi64) {
-      setPlatform('pi')
-    }
   }
 
   function setReleaseType(type) {
@@ -565,9 +562,6 @@
       el.variantSelect.innerHTML = '<option value="">No images found for this platform</option>'
       return
     }
-    const ph = document.createElement('option')
-    ph.value = ''; ph.textContent = '— Select image —'
-    el.variantSelect.appendChild(ph)
     filtered.forEach(img => {
       const opt = document.createElement('option')
       opt.value = img.url
@@ -575,6 +569,7 @@
       opt.dataset.img = JSON.stringify(img)
       el.variantSelect.appendChild(opt)
     })
+    el.variantSelect.selectedIndex = 0
   }
 
   el.variantSelect.addEventListener('change', updateButton)
@@ -610,8 +605,8 @@
       el.sdVersion.textContent = sdRelease.version || '—'
       el.sdMeta.innerHTML = `<span>${sdRelease.images.length}</span> images available`
       appendLog(el.sdLog, `FPP ${sdRelease.version} — ${sdRelease.images.length} SD images found`, 'ok')
-      populateVariants()
       updatePlatformGrid()
+      setPlatform(sdRelease.images.some(i => i.platform === 'pi64') ? 'pi64' : 'pi')
     } catch (e) {
       el.sdMeta.textContent = 'Failed to fetch FPP release'
       appendLog(el.sdLog, `Error: ${e.message}`, 'err')
