@@ -1,3 +1,11 @@
+## [0.2.5] - 2026-06-19
+
+- Cleanup (jessica12ryan)
+- Update Node.js version 20 to 22 (jessica12ryan)
+- Updates to automatic updates and fix for default image selection (jessica12ryan)
+
+---
+
 ## [0.2.4] - 2026-06-19
 
 - Refactor platform buttons and update platform logic (jessica12ryan)
