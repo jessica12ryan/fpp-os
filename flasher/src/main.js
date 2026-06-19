@@ -280,10 +280,11 @@ ipcMain.handle('download-iso', async (_event, url, isoName) => {
 })
 
 // ── macOS password prompt via AppleScript ────────────────────────────────────
-function promptForPassword() {
+function promptForPassword(message) {
   return new Promise((resolve, reject) => {
+    const dialog = message || 'FPP Flasher needs administrator access to flash the drive.\\n\\nEnter your Mac administrator password to continue.'
     const script = [
-      'display dialog "FPP Flasher needs administrator access to flash the drive.\\n\\nEnter your Mac administrator password to continue."',
+      `display dialog "${dialog}"`,
       'with title "FPP Flasher"',
       'with icon caution',
       'with hidden answer',
@@ -426,29 +427,36 @@ ipcMain.handle('download-flasher-update', async (_event, url, name) => {
 // ── Install flasher update and restart ────────────────────────────────────────
 ipcMain.handle('install-and-restart', async (_event, updatePath) => {
   const platform = process.platform
-  const tmpScript = path.join(app.getPath('temp'), 'fpp-update.' + (platform === 'win32' ? 'bat' : 'sh'))
 
   if (platform === 'darwin') {
-    // macOS: mount DMG → copy app → unmount → launch new version
-    const script = `#!/bin/bash
-sleep 2
-DMG="${updatePath}"
-MOUNT=$(hdiutil attach -nobrowse "$DMG" 2>/dev/null | tail -1 | awk '{print $3}')
-if [ -d "$MOUNT/FPP Flasher.app" ]; then
-  if [ -d "/Applications/FPP Flasher.app" ]; then
-    rm -rf "/Applications/FPP Flasher.app"
-  fi
-  ditto "$MOUNT/FPP Flasher.app" "/Applications/FPP Flasher.app"
-  hdiutil detach "$MOUNT" -quiet 2>/dev/null
-  rm -f "$DMG"
-  open "/Applications/FPP Flasher.app"
-fi`
+    // Write AppleScript for a single admin-authenticated ditto call
+    const asPath = path.join(app.getPath('temp'), 'fpp-update.applescript')
+    const asContent = 'on run argv\n' +
+      '  set mountPath to item 1 of argv\n' +
+      '  do shell script "ditto " & quoted form of (mountPath & "/FPP Flasher.app") & " " & quoted form of "/Applications/FPP Flasher.app" with administrator privileges\n' +
+      'end run\n'
+    fs.writeFileSync(asPath, asContent, 'utf8')
+
+    // Background shell script: mount DMG → run AppleScript → unmount → clean up → relaunch
+    const tmpScript = path.join(app.getPath('temp'), 'fpp-update.sh')
+    const script = '#!/bin/bash\n' +
+      'sleep 2\n' +
+      `DMG="${updatePath}"\n` +
+      'MOUNT=$(/usr/bin/hdiutil attach -nobrowse -plist "$DMG" 2>/dev/null | grep -A1 \'<key>mount-point</key>\' | tail -1 | sed \'s/.*<string>\\(.*\\)<\\/string>.*/\\1/\')\n' +
+      'if [ -d "$MOUNT/FPP Flasher.app" ]; then\n' +
+      `  /usr/bin/osascript "${asPath}" "$MOUNT"\n` +
+      '  /usr/bin/hdiutil detach "$MOUNT" -quiet 2>/dev/null\n' +
+      '  rm -f "$DMG"\n' +
+      '  open "/Applications/FPP Flasher.app"\n' +
+      'fi\n' +
+      `rm -f "${asPath}"\n`
     fs.writeFileSync(tmpScript, script, 'utf8')
     fs.chmodSync(tmpScript, '755')
     exec(`nohup "${tmpScript}" > /dev/null 2>&1 &`)
     app.exit(0)
   } else if (platform === 'win32') {
     // Windows: run installer silently → launch updated app
+    const tmpScript = path.join(app.getPath('temp'), 'fpp-update.bat')
     const script = `@echo off
 timeout /t 3 /nobreak >nul
 start /wait "" "${updatePath}" /S
@@ -461,10 +469,11 @@ if exist "%ProgramFiles%\\FPP Flasher\\FPP Flasher.exe" (
     exec(`start "" /B "${tmpScript}"`)
     app.exit(0)
   } else {
-    // Linux: replace AppImage → make executable → launch
+    // Linux: make AppImage executable → launch
+    await execAsync(`chmod +x "${updatePath}"`)
+    const tmpScript = path.join(app.getPath('temp'), 'fpp-update.sh')
     const script = `#!/bin/bash
 sleep 2
-chmod +x "${updatePath}"
 rm -f /tmp/.mount-*
 "${updatePath}" &`
     fs.writeFileSync(tmpScript, script, 'utf8')
