@@ -1,3 +1,9 @@
+## [0.2.3] - 2026-06-19
+
+- Add ability to flash dev fpp build to SD, and updates to automatic updates (jessica12ryan)
+
+---
+
 ## [0.2.2] - 2026-06-18
 
 - Add files via upload (jessica12ryan)
