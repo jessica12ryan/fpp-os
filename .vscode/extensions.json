@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "timonwong.shellcheck",
+    "dbaeumer.vscode-eslint",
+    "EditorConfig.EditorConfig",
+    "yzhang.markdown-all-in-one"
+  ]
+}

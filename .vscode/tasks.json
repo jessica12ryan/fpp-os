@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build ISO",
+      "type": "shell",
+      "command": "bash scripts/build-iso.sh",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint shell scripts",
+      "type": "shell",
+      "command": "find . -name '*.sh' -not -path './.git/*' -not -path './flasher/*' -not -path './SD/FPP_Install.sh' | xargs shellcheck -x --severity=error",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint flasher JS",
+      "type": "shell",
+      "command": "npx eslint src/",
+      "options": {"cwd": "${workspaceFolder}/flasher"},
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Install flasher deps",
+      "type": "shell",
+      "command": "npm ci",
+      "options": {"cwd": "${workspaceFolder}/flasher"},
+      "group": "none",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "files.associations": {
+    "*.preseed": "properties"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.iso": true
+  },
+  "editor.formatOnSave": true,
+  "editor.rulers": [120],
+  "shellcheck.enable": true,
+  "shellcheck.executablePath": "/usr/local/bin/shellcheck",
+  "shellcheck.severity": "error",
+  "eslint.enable": true,
+  "eslint.workingDirectories": [{"directory": "flasher", "changeProcessCWD": true}],
+  "search.exclude": {
+    "flasher/node_modules": true,
+    "flasher/dist": true,
+    "**/*.iso": true
+  }
+}
