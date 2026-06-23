@@ -1,3 +1,10 @@
+## [0.2.6] - 2026-06-23
+
+- Add files for claude and opencode (jessica12ryan)
+- Revise post-installation steps for VM setups (jessica12ryan)
+
+---
+
 ## [0.2.5] - 2026-06-19
 
 - Cleanup (jessica12ryan)
