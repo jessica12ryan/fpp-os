@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # ── 1. Resolve which version we're building for ─────────────────────────
       - name: Resolve release version
