@@ -47,7 +47,7 @@ jobs:
           find . -name '*.sh' -not -path './.git/*' -not -path './flasher/*' -not -path './SD/FPP_Install.sh' | xargs shellcheck -x --severity=error
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
