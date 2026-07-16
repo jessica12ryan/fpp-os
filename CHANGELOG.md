@@ -1,3 +1,30 @@
+## [0.2.7] - 2026-07-16
+
+- Merge pull request #19 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.1.1 (jessica12ryan)
+- Merge pull request #18 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.7.0 (jessica12ryan)
+- Merge pull request #17 from jessica12ryan/dependabot/github_actions/actions/setup-node-7 (jessica12ryan)
+- Bump electron from 43.1.0 to 43.1.1 in /flasher (dependabot[bot])
+- Bump eslint from 10.6.0 to 10.7.0 in /flasher (dependabot[bot])
+- Bump actions/setup-node from 6 to 7 (dependabot[bot])
+- Merge pull request #16 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.1.0 (jessica12ryan)
+- Bump electron from 43.0.0 to 43.1.0 in /flasher (dependabot[bot])
+- Merge pull request #15 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.6.0 (jessica12ryan)
+- Merge pull request #14 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.0.0 (jessica12ryan)
+- Bump eslint from 10.5.0 to 10.6.0 in /flasher (dependabot[bot])
+- Bump electron from 42.5.0 to 43.0.0 in /flasher (dependabot[bot])
+- Merge pull request #13 from jessica12ryan/alert-autofix-1 (jessica12ryan)
+- Potential fix for code scanning alert no. 1: Workflow does not contain permissions (jessica12ryan)
+- Update Licenses (jessica12ryan)
+- Revise security policy and reporting guidelines (jessica12ryan)
+- Merge pull request #12 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-42.5.0 (jessica12ryan)
+- Merge pull request #11 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.7.0 (jessica12ryan)
+- Merge pull request #10 from jessica12ryan/dependabot/github_actions/actions/checkout-7 (jessica12ryan)
+- Bump electron from 42.4.1 to 42.5.0 in /flasher (dependabot[bot])
+- Bump globals from 17.6.0 to 17.7.0 in /flasher (dependabot[bot])
+- Bump actions/checkout from 6 to 7 (dependabot[bot])
+
+---
+
 ## [0.2.6] - 2026-06-23
 
 - Add files for claude and opencode (jessica12ryan)
