@@ -67,7 +67,7 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
 FPPIMAGEVER=${FPPIMAGEVER:-"2026-04"}
-FPPCFGVER="106"
+FPPCFGVER="116"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -642,7 +642,7 @@ install_base_packages() {
                       apache2 apache2-bin apache2-data apache2-utils libavahi-client-dev util-linux-extra \
                       bc bash-completion btrfs-progs exfat-fuse lsof ethtool curl zip unzip bzip2 wireless-tools dos2unix \
                       fbi fbset file flite ca-certificates lshw gettext wget iproute2 fswatch \
-                      build-essential ffmpeg gcc g++ gdb vim vim-common bison flex device-tree-compiler dh-autoreconf \
+                      build-essential ffmpeg gcc g++ gdb mold vim vim-common bison flex device-tree-compiler dh-autoreconf \
                       git hdparm i2c-tools jq less tcpdump time usbutils usb-modeswitch \
                       samba rsync sudo shellinabox dnsmasq hostapd vsftpd sqlite3 at haveged samba samba-common-bin \
                       mp3info exim4 mailutils dhcp-helper parprouted bridge-utils libiio-utils libhidapi-dev \
@@ -700,7 +700,7 @@ EOF
         if [ "${OSVER}" == "debian_12" ]; then
             PACKAGE_LIST="$PACKAGE_LIST python3-distutils"
         fi
-        PACKAGE_LIST="$PACKAGE_LIST ntpsec pipewire"
+        PACKAGE_LIST="$PACKAGE_LIST chrony pipewire"
         
         if $skip_apt_install; then
             echo "skipping apt install because skip_apt_install == $skip_apt_install"
@@ -1050,8 +1050,9 @@ EOF
         cat >> ${BOOTDIR}/config.txt <<'EOF'
 [all]
 
-# Enable SPI in device tree
+# Enable SPI in device tree, but keep the cs pins free
 dtparam=spi=on
+dtoverlay=spi0-0cs
 
 # Enable PCIe for NVME storage (Gen2 is the Pi 5's certified speed; Gen3
 # is an overclock that some NVMe HATs/drives fail to train reliably at)
@@ -1338,7 +1339,6 @@ if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
     # while initializing
     git submodule update --init external/RF24
     git submodule update --init external/rpi-rgb-led-matrix
-    git submodule update --init external/rpi_ws281x
     git submodule update --init external/spixels
     cd /opt/fpp/src
     make gitsubmodules
@@ -1440,13 +1440,14 @@ cat > /etc/systemd/system/exim4-base.service.d/fpp-defer.conf <<'EOF'
 After=fpp_postnetwork.service
 EOF
 
-# ntpsec: fppinit's postNetwork now does a fast one-shot SNTP clock set, so the
-# ntpsec daemon isn't needed during the boot critical path -- it only refines
-# the clock afterwards. Start it after fpp_postnetwork so it's out of the
-# fppinit/networkd contention window on single-core SBCs.
-echo "FPP - Deferring ntpsec until after the clock is set in postNetwork"
-mkdir -p /etc/systemd/system/ntpsec.service.d
-cat > /etc/systemd/system/ntpsec.service.d/fpp-defer.conf <<'EOF'
+# chrony: fppinit's postNetwork now does a fast one-shot SNTP clock set, so the
+# chrony daemon isn't needed during the boot critical path -- it only refines
+# the clock afterwards (and serves time to the rest of the fleet). Start it
+# after fpp_postnetwork so it's out of the fppinit/networkd contention window on
+# single-core SBCs.
+echo "FPP - Deferring chrony until after the clock is set in postNetwork"
+mkdir -p /etc/systemd/system/chrony.service.d
+cat > /etc/systemd/system/chrony.service.d/fpp-defer.conf <<'EOF'
 [Unit]
 After=fpp_postnetwork.service
 EOF
@@ -1548,6 +1549,25 @@ fi
 
 #######################################
 echo "FPP - Populating ${FPPHOME}"
+# adduser only chowns the home directory when it CREATES it; if the base image
+# already shipped /home/fpp (or a stock UID-1000 user's home was reused) it is
+# left root-owned, which breaks anything fpp runs from its home (e.g. distcc's
+# ~/.distcc lock dir). Make sure the home dir itself belongs to fpp before we
+# start populating it; a recursive sweep at the end of image creation catches
+# everything the root-run install steps drop in afterward.
+chown ${FPPUSER}:${FPPUSER} ${FPPHOME}
+
+# adduser only copies /etc/skel into the home dir when it CREATES it. When
+# /home/fpp already exists (see above) the skel dotfiles are skipped, leaving
+# the user without ~/.profile -- and a bash *login* shell then never sources
+# ~/.bashrc (which loads /opt/fpp/scripts/common and, on a kiosk, fires startx).
+# Seed any skel dotfiles that are missing before we append to .bashrc below.
+for skelfile in /etc/skel/.profile /etc/skel/.bashrc /etc/skel/.bash_logout; do
+    if [ -f "${skelfile}" ] && [ ! -e "${FPPHOME}/$(basename "${skelfile}")" ]; then
+        cp "${skelfile}" "${FPPHOME}/"
+        chown ${FPPUSER}:${FPPUSER} "${FPPHOME}/$(basename "${skelfile}")"
+    fi
+done
 mkdir ${FPPHOME}/.ssh
 chown ${FPPUSER}:${FPPUSER} ${FPPHOME}/.ssh
 chmod 700 ${FPPHOME}/.ssh
@@ -1564,6 +1584,7 @@ set autoindent
 set ignorecase
 set mouse=r
 syntax on
+colorscheme desert
 EOF
 
 chmod 644 ${FPPHOME}/.vimrc
@@ -1655,6 +1676,62 @@ configure_ccache() {
 configure_logging
 configure_ccache
 
+#############################################################################
+# configure_fpp_apt_repo
+#
+# nocc (FPP's distributed C++ compiler) is not in Debian, so FPP serves it from
+# its own signed apt repo. We trust the keyring BUNDLED in the FPP source tree
+# (reviewed-in-source, not fetched over the wire) and install nocc. Gated on
+# FPP_APT_REPO_URL so it is trivial to disable (set empty) or point elsewhere.
+# Best-effort: a transient repo outage must never fail the whole install.
+#############################################################################
+FPP_APT_REPO_URL="${FPP_APT_REPO_URL:-https://falconchristmas.github.io/fpp-apt}"
+# apt suites the FPP repo publishes, oldest -> newest. Add a Debian codename here
+# (and publish that suite) as each new release goes live -- e.g. append "forky".
+FPP_APT_REPO_SUITES="${FPP_APT_REPO_SUITES:-trixie}"
+# Use THIS device's OS codename when we publish a matching suite; otherwise fall
+# back to the newest published suite. Safe because nocc's binaries are portable
+# across Debian releases (static Go daemons + a wrapper built against older
+# glibc), so an as-yet-unserved codename (Ubuntu 'noble', or 'forky' before its
+# suite exists) still gets working packages instead of a 404.
+FPP_APT_REPO_SUITE="${FPP_APT_REPO_SUITE:-}"
+if [ -z "${FPP_APT_REPO_SUITE}" ]; then
+    _fpprepo_codename="$(. /etc/os-release 2>/dev/null; echo "${VERSION_CODENAME}")"
+    for _fpprepo_s in ${FPP_APT_REPO_SUITES}; do
+        [ "${_fpprepo_s}" = "${_fpprepo_codename}" ] && FPP_APT_REPO_SUITE="${_fpprepo_s}"
+    done
+    [ -z "${FPP_APT_REPO_SUITE}" ] && FPP_APT_REPO_SUITE="${FPP_APT_REPO_SUITES##* }"
+fi
+configure_fpp_apt_repo() {
+    [ -n "${FPP_APT_REPO_URL}" ] || return 0
+    local keysrc=/opt/fpp/etc/apt/fpp-archive-keyring.gpg
+    if [ ! -f "${keysrc}" ]; then
+        echo "FPP - WARNING: ${keysrc} missing; skipping FPP apt repo / nocc"
+        return 0
+    fi
+    echo "FPP - Configuring FPP apt repository (${FPP_APT_REPO_URL})"
+    install -d -m 0755 /usr/share/keyrings
+    install -m 0644 "${keysrc}" /usr/share/keyrings/fpp-archive-keyring.gpg
+    cat > /etc/apt/sources.list.d/fpp.sources <<EOF
+Types: deb
+URIs: ${FPP_APT_REPO_URL}
+Suites: ${FPP_APT_REPO_SUITE}
+Components: main
+Signed-By: /usr/share/keyrings/fpp-archive-keyring.gpg
+EOF
+    # Docker passes --skip-apt-install and installs nocc from its Dockerfile so
+    # the package lands in a cached layer; there we just leave the repo set up.
+    if $skip_apt_install; then
+        echo "FPP - (skip-apt-install) FPP repo configured; 'nocc' left to caller"
+        return 0
+    fi
+    apt-get update || echo "FPP - WARNING: apt-get update failed for FPP repo"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nocc \
+        || echo "FPP - WARNING: 'apt-get install nocc' failed (repo unreachable?)"
+}
+
+configure_fpp_apt_repo
+
 configure_samba_ftp() {
     echo "FPP - Configuring FTP server"
     sed -i -e "s/.*anonymous_enable.*/anonymous_enable=NO/" /etc/vsftpd.conf
@@ -1692,9 +1769,9 @@ EOF
 }
 
 finalize_image_pre_build() {
-    echo "FPP - Adding missing exim4 & ntpsec log directory"
-    mkdir -p /var/log/ntpsec
-    chown ntpsec:ntpsec /var/log/ntpsec
+    echo "FPP - Adding missing exim4 & chrony log directory"
+    mkdir -p /var/log/chrony
+    chown _chrony:_chrony /var/log/chrony 2>/dev/null || true
     mkdir -p /var/log/exim4
     chown Debian-exim /var/log/exim4
     chgrp Debian-exim /var/log/exim4
@@ -1855,11 +1932,66 @@ configure_apache
 
 
 configure_ntp() {
-    echo "FPP - Configuring NTP Daemon"
-    # Clear all existing servers/pools and set the falconplayer pool
-    sed -i '/^server.*/d' /etc/ntpsec/ntp.conf
-    sed -i '/^pool.*/d' /etc/ntpsec/ntp.conf
-    sed -i '$s/$/\npool falconplayer.pool.ntp.org iburst minpoll 8 maxpoll 12 prefer/' /etc/ntpsec/ntp.conf
+    echo "FPP - Configuring chrony (NTP daemon)"
+
+    # An older FPP (or the base image) may have shipped ntpsec; it and chrony
+    # both bind UDP/123, so make sure ntpsec is gone before chrony takes over.
+    systemctl disable --now ntpsec.service > /dev/null 2>&1 || true
+    if dpkg -l ntpsec > /dev/null 2>&1; then
+        apt-get -y purge ntpsec > /dev/null 2>&1 || true
+    fi
+    # systemd-timesyncd would also fight chrony for the clock/port; keep it off.
+    systemctl disable --now systemd-timesyncd.service > /dev/null 2>&1 || true
+    systemctl mask systemd-timesyncd.service > /dev/null 2>&1 || true
+
+    # Write FPP's managed chrony.conf. The pool/server line is rewritten by the
+    # "Override default NTP Server" setting (see SetNTPServer in settings.php);
+    # everything else is FPP policy.
+    cat > /etc/chrony/chrony.conf <<'EOF'
+# FPP-managed chrony configuration.
+# The pool/server source line below is rewritten by the "Override default NTP
+# Server" web setting; the rest is regenerated on install.
+
+# Time source. FPP's public pool by default; replaced by the ntpServer setting.
+pool falconplayer.pool.ntp.org iburst minpoll 8 maxpoll 12
+
+# Record the clock's drift rate so time stays reasonable across reboots even
+# without an RTC or a reachable upstream.
+driftfile /var/lib/chrony/chrony.drift
+
+# ntpd "-g" equivalent: step (rather than slew) the clock for the first few
+# updates so an RTC-less board that boots with a wildly wrong time corrects fast.
+makestep 1.0 3
+
+# Read from / write back to the hardware RTC when one is present.
+rtcsync
+
+# DHCP-provided NTP servers are dropped into this dir by the networkd-dispatcher
+# chrony hook, but only when the UseNTPFromDHCP setting is enabled. Empty/absent
+# otherwise, which is harmless.
+sourcedir /run/chrony-dhcp
+
+# --- FPP as an NTP server for the rest of the fleet -------------------------
+# FPP has always run an NTP server that other controllers can point at (via the
+# "Override default NTP Server" setting). Users run on arbitrary IP ranges, so
+# the server is NOT restricted to a particular subnet. chrony (unlike classic
+# ntpd) does not answer mode 6/7 management queries over the network, so this
+# only exposes basic time service.
+allow all
+# Serve our own clock even with no synced upstream, so a controller acting as
+# the site time source keeps answering when the internet path is down/filtered.
+# Stratum 10 stays well above real servers, so a reachable upstream is always
+# preferred over the local clock.
+local stratum 10
+EOF
+
+    # chrony.conf references sourcedir /run/chrony-dhcp, and /run is tmpfs (empty
+    # at boot). Have systemd-tmpfiles create it early so chronyd never starts
+    # against a missing directory.
+    cat > /etc/tmpfiles.d/fpp-chrony.conf <<'EOF'
+d /run/chrony-dhcp 0755 root root -
+EOF
+    mkdir -p /run/chrony-dhcp
 }
 configure_ntp
 
@@ -2042,7 +2174,7 @@ if $isimage; then
     # correctness and because anything copied out of the tree with "cp -a"
     # (preserving ownership) would otherwise carry the build uid into /etc. A
     # concrete failure: networkd-dispatcher refuses to run hooks in directories
-    # not owned by root, which broke the routable.d/ntpd fast time-sync hook.
+    # not owned by root, which broke the routable.d/chrony fast time-sync hook.
     # Do this before install_fpp_services so its copies inherit root ownership.
     echo "FPP - Setting root:root ownership on /opt/fpp"
     chown -R root:root /opt/fpp
@@ -2090,7 +2222,7 @@ configure_swap() {
     if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
         # Just sysctl tuning; rpi-swap handles the actual zram device.
         echo "vm.swappiness=1" >> /etc/sysctl.d/10-swap.conf
-        echo "vm.vfs_cache_pressure=50" >> /etc/sysctl.d/10-swap.conf
+        echo "vm.vfs_cache_pressure=90" >> /etc/sysctl.d/10-swap.conf
         # RPi OS ships zram-tools enabled by default. Disable it so it
         # doesn't race with rpi-swap's systemd-zram-setup@zram0 over
         # /dev/zram0 at boot (both try to claim the device).
@@ -2112,15 +2244,14 @@ configure_swap() {
         echo "PRIORITY=100" >> /etc/default/zramswap
         if [ "$FPPPLATFORM" == "BeagleBone 64" ]; then
             echo "SIZE=125" >> /etc/default/zramswap
-            echo "vm.swappiness=100" >> /etc/sysctl.d/10-swap.conf
-            echo "vm.vfs_cache_pressure=100" >> /etc/sysctl.d/10-swap.conf
-            echo "vm.dirty_background_ratio=1" >> /etc/sysctl.d/10-swap.conf
-            echo "vm.dirty_ratio=50" >> /etc/sysctl.d/10-swap.conf
+            echo "vm.swappiness=10" >> /etc/sysctl.d/10-swap.conf
         else
-            echo "SIZE=75" >> /etc/default/zramswap
-            echo "vm.swappiness=1" >> /etc/sysctl.d/10-swap.conf
-            echo "vm.vfs_cache_pressure=50" >> /etc/sysctl.d/10-swap.conf
+            echo "SIZE=96" >> /etc/default/zramswap
+            echo "vm.swappiness=5" >> /etc/sysctl.d/10-swap.conf
         fi
+        echo "vm.vfs_cache_pressure=90" >> /etc/sysctl.d/10-swap.conf
+        echo "vm.dirty_background_ratio=5" >> /etc/sysctl.d/10-swap.conf
+        echo "vm.dirty_ratio=10" >> /etc/sysctl.d/10-swap.conf
     fi
 }
 
@@ -2208,3 +2339,13 @@ print_install_complete
 
 cp /root/FPP_Install.* ${FPPHOME}/
 chown fpp:fpp ${FPPHOME}/FPP_Install.*
+
+if $isimage; then
+    # Final safety net: many install steps above run as root and create files or
+    # directories under ${FPPHOME} (the apache CSP config, .config, the copied
+    # FPP_Install.*, etc.), and adduser leaves /home/fpp itself root-owned if the
+    # base image pre-created it. Guarantee the whole home tree is fpp-owned so
+    # the shipped image never hands the fpp user a directory it can't write.
+    echo "FPP - Ensuring ${FPPHOME} is owned by ${FPPUSER}"
+    chown -R ${FPPUSER}:${FPPUSER} ${FPPHOME}
+fi
