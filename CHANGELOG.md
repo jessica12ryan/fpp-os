@@ -1,3 +1,34 @@
+## [1.0.0] - 2026-08-21
+
+- Update README to reflect current FPP-OS status (jessica12ryan)
+- Merge pull request #31 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.4.0 (jessica12ryan)
+- Merge pull request #30 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.11.0 (jessica12ryan)
+- Bump electron from 43.3.0 to 43.4.0 in /flasher (dependabot[bot])
+- Bump globals from 17.9.0 to 17.11.0 in /flasher (dependabot[bot])
+- Merge pull request #29 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.8.1 (jessica12ryan)
+- Merge pull request #28 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.3.0 (jessica12ryan)
+- Bump eslint from 10.8.0 to 10.8.1 in /flasher (dependabot[bot])
+- Bump electron from 43.2.0 to 43.3.0 in /flasher (dependabot[bot])
+- Merge pull request #27 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-60ab56c091 (jessica12ryan)
+- Bump js-yaml in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #26 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-5f7cea1f02 (jessica12ryan)
+- Bump fast-uri in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #25 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.9.0 (jessica12ryan)
+- Bump globals from 17.8.0 to 17.9.0 in /flasher (dependabot[bot])
+- Merge pull request #24 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-685b0d7bcd (jessica12ryan)
+- Bump undici in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #23 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.8.0 (jessica12ryan)
+- Bump eslint from 10.7.0 to 10.8.0 in /flasher (dependabot[bot])
+- Merge pull request #22 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.8.0 (jessica12ryan)
+- Bump globals from 17.7.0 to 17.8.0 in /flasher (dependabot[bot])
+- fix: bump brace-expansion and js-yaml to resolve 4 dependabot advisories (jessica12ryan)
+- Merge pull request #21 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-9608f1b29c (jessica12ryan)
+- Bump the npm_and_yarn group across 1 directory with 2 updates (dependabot[bot])
+- Merge pull request #20 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.2.0 (jessica12ryan)
+- Bump electron from 43.1.1 to 43.2.0 in /flasher (dependabot[bot])
+
+---
+
 ## [0.2.7] - 2026-07-16
 
 - Merge pull request #19 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.1.1 (jessica12ryan)
