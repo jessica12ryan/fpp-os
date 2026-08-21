@@ -66,8 +66,8 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # and shown in /etc/issue. Override via env (build-image-pi.sh passes the
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
-FPPIMAGEVER=${FPPIMAGEVER:-"2026-04"}
-FPPCFGVER="116"
+FPPIMAGEVER=${FPPIMAGEVER:-"2026-08"}
+FPPCFGVER="133"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -129,7 +129,13 @@ if [[ ${CPUS} -gt 1 ]]; then
         # will be very slow as we constantly swap in/out
         CPUS=1
     elif [[ ${MEMORY} -lt 512000 ]]; then
-        SWAPTOTAL=$(grep SwapTotal /proc/meminfo | awk '{print $2}')
+        # Disk-backed swap only. SwapTotal also counts zram, which is compressed
+        # swap living in RAM: it cannot give a compile headroom the box does not
+        # physically have, so a zram-only board (e.g. a BeagleBone, ~240MB of
+        # zram and no disk swap) used to satisfy this test and pick -j2, then
+        # thrash. Mirrors DiskBackedSwapKB in scripts/functions, spelled out
+        # here because this file runs before the FPP source is available.
+        SWAPTOTAL=$(awk 'NR > 1 && $1 !~ /^\/dev\/zram/ { s += $3 } END { print s + 0 }' /proc/swaps 2>/dev/null)
         # Limited memory, if we have some swap, we'll go ahead with -j 2
         # otherwise we'll need to stick with -j 1 or we run out of memory
         if [[ ${SWAPTOTAL} -gt 49000 ]]; then
@@ -660,12 +666,17 @@ install_base_packages() {
                       gstreamer1.0-libav gstreamer1.0-gl gstreamer1.0-x \
                       libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-0 \
                       flex bison pkg-config libasound2-dev python3-setuptools libssl-dev libtool bsdextrautils iw rsyslog tzdata libsystemd-dev \
-                      yt-dlp"
+                      python3-pip yt-dlp"
 
         if [ "$FPPPLATFORM" == "Raspberry Pi" -o "$FPPPLATFORM" == "BeagleBone Black"  -o "$FPPPLATFORM" == "BeagleBone 64" ]; then
             # firmware-misc-nonfree carries the rt2x00 / Mediatek (mt7601u, mt76xx) USB
-            # wifi blobs
-            PACKAGE_LIST="$PACKAGE_LIST firmware-realtek firmware-atheros firmware-brcm80211 firmware-iwlwifi firmware-libertas firmware-zd1211 firmware-ti-connectivity firmware-misc-nonfree zram-tools"
+            # wifi blobs.
+            # No firmware-iwlwifi: every part it covers is Intel PCIe/M.2, which
+            # none of these boards can take, and it is the single largest firmware
+            # package in the archive (~170MB unpacked). The Pi image build already
+            # purged it back out after the fact; not installing it in the first
+            # place does the same for the BeagleBone images.
+            PACKAGE_LIST="$PACKAGE_LIST firmware-realtek firmware-atheros firmware-brcm80211 firmware-libertas firmware-zd1211 firmware-ti-connectivity firmware-misc-nonfree zram-tools"
             if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
                 PACKAGE_LIST="$PACKAGE_LIST libva-dev smartmontools edid-decode kms++-utils"
             fi
@@ -717,7 +728,6 @@ EOF
         fi
         echo "FPP - Cleaning up after installing packages"
         apt-get -y clean
-
 
         echo "FPP - Configuring shellinabox to use /var/tmp"
         echo "SHELLINABOX_DATADIR=/var/tmp/" >> /etc/default/shellinabox
@@ -808,6 +818,21 @@ EOF
             systemctl disable systemd-networkd-wait-online.service
             systemctl enable systemd-resolved
             systemctl enable networkd-dispatcher
+
+            # The wpasupplicant package enables BOTH the generic
+            # wpa_supplicant.service and the per-interface
+            # wpa_supplicant@<iface>.service, so every board boots two
+            # supplicant daemons. FPP only ever drives the per-interface one
+            # (see FPPINIT_Network.cpp), so the generic instance is a second
+            # daemon doing nothing on a board with 480MB and one core.
+            #
+            # Disabled WITHOUT --now on purpose: the generic unit declares
+            # RuntimeDirectory=wpa_supplicant, so stopping it makes systemd
+            # delete /run/wpa_supplicant -- including the control socket the
+            # RUNNING per-interface instance created there, which would break
+            # wpa_cli (and the network status page) until the next reboot.
+            # Leaving it running until then costs nothing and avoids that.
+            systemctl disable wpa_supplicant.service || true
 
             # if systemd hasn't created a new resolv.conf, don't replace it yet
             if [ -f /run/systemd/resolve/resolv.conf ]; then
@@ -927,7 +952,60 @@ After=fpp_postnetwork.service
 EOF
 }
 
+# Realtek USB WiFi adapters (rtw88_usb) default to switching the chip into USB 3
+# mode during probe.  The BeagleBone USB hosts are USB 2.0 high-speed only --
+# AM335x musb-hdrc and AM62x both enumerate at 480Mbps and expose no SuperSpeed
+# port -- so there is nothing to switch to and the attempt is pure risk.
+#
+# The switch is a register write (0xc4) that forces the device to re-enumerate,
+# and on AM335x it intermittently leaves the adapter wedged: every subsequent
+# register access returns -EPROTO/-ETIMEDOUT, the radio never associates, and the
+# board boots and runs normally but is unreachable. Seen twice in ~14 boots on one
+# board, with 65,956 driver errors logged on one of them against 1 on a good boot.
+#
+# Critically, re-probing does not recover it, because the re-probe re-attempts the
+# same switch. That is why physically unplugging and replugging the adapter -- or
+# unbinding and rebinding it in software -- does not reliably bring it back.
+#
+# Disabling this is cheap even on a Beagle that does have SuperSpeed: the kernel's
+# own help text offers N as the way to keep USB 3 signalling from interfering with
+# the 2.4GHz band, and a WiFi adapter does not need more than USB 2 high-speed for
+# FPP's traffic.
+#
+# Measured on a BBB: 0xc4 write failures 1 -> 0 per boot, USB re-enumerations
+# 2 -> 1, total rtw88 errors -> 0.
+setup_beaglebone_rtw88_usb() {
+    echo "FPP - Disabling the rtw88 USB 3 mode switch (no BeagleBone USB host is USB 3)"
+    mkdir -p /etc/modprobe.d
+    # The filename has to sort LAST. modprobe concatenates options from every
+    # file in /etc/modprobe.d in filename order and the final value wins, and the
+    # out-of-kernel lwfinger/rtw88 driver ships /etc/modprobe.d/rtw88.conf which
+    # sets the opposite (switch_usb_mode=y). BB64 uses that driver and keeps that
+    # file -- only the BBB image removes it (build-image-bbb.sh) -- so anything
+    # sorting before "rtw88.conf" is silently overridden. That is not a
+    # hypothetical: an earlier fpp-rtw88-usb.conf was installed correctly and the
+    # parameter still read Y on every BB64 boot.
+    rm -f /etc/modprobe.d/fpp-rtw88-usb.conf
+    cat > /etc/modprobe.d/zz-fpp-rtw88-usb.conf <<'EOF'
+# Auto-generated by FPP - see setup_beaglebone_rtw88_usb in SD/FPP_Install.sh
+# The BeagleBone USB host is USB 2.0 only, so switching a Realtek adapter into
+# USB 3 mode cannot succeed; the attempt forces a re-enumeration that sometimes
+# wedges the adapter until the board is power cycled. Re-probing re-attempts the
+# switch, so a wedged adapter will not recover from a replug either.
+#
+# BOTH module names are listed on purpose. The rtw88 USB core is rtw88_usb on
+# some kernels and rtw_usb on others -- 7.1.6 builds it as rtw88_usb, the
+# 6.18.x arm64-k3 builds as rtw_usb -- and modprobe silently ignores options for
+# a module that is not present. Naming only one leaves the option a no-op on the
+# other, which is exactly what happened on BB64: the file was installed and the
+# parameter still read Y.
+options rtw88_usb switch_usb_mode=N
+options rtw_usb switch_usb_mode=N
+EOF
+}
+
 setup_platform_beaglebone_black() {
+    setup_beaglebone_rtw88_usb
     # Blacklist gyro/barometer on SanCloud enhanced (conflicts with cape pins).
     cat > /etc/modprobe.d/blacklist-gyro.conf <<'EOF'
 blacklist st_pressure_spi
@@ -964,6 +1042,7 @@ EOF
 }
 
 setup_platform_beaglebone_64() {
+    setup_beaglebone_rtw88_usb
     systemctl disable keyboard-setup
     systemctl disable unattended-upgrades
     systemctl disable mender-client
@@ -1080,25 +1159,21 @@ init_uart_clock=16000000
 dtoverlay=miniuart-bt
 
 # Model Specific configuration
-# GPU memory set to 128 to deal with error in omxplayer with hi-def videos
+#
+# No gpu_mem here, deliberately. The firmware GPU split is a legacy setting and
+# nothing in FPP draws on it any more: video goes through GStreamer (the old
+# omxplayer/MMAL path is long gone), and the display, DPI and virtual-matrix
+# buffers all come from the vc4-KMS CMA pool sized above. A Pi 5 ignores
+# gpu_mem outright; on a Pi 4 the 3D block has its own MMU and allocates from
+# Linux instead, where the documented ceiling is 76 -- so the 256 this used to
+# set just carved ~180MB out of usable RAM. Unset lets the firmware pick its
+# own default (64 below 1GB, 76 at 1GB and above), which is what we want.
 [pi5]
-gpu_mem=256
 dtparam=uart0=on
-[pi4]
-gpu_mem=256
-[pi3]
-gpu_mem=128
-[pi0]
-gpu_mem=64
 [pi02]
-gpu_mem=128
-dtparam=audio=off                                                                                                                                                                                                            
-hdmi_force_hotplug=1                                                                                                                                                                                                         
+dtparam=audio=off
+hdmi_force_hotplug=1
 hdmi_drive=2
-[pi1]
-gpu_mem=64
-[pi2]
-gpu_mem=64
 
 [all]
 
@@ -1334,6 +1409,30 @@ fi
 echo "FPP - Switching git clone to ${FPPBRANCH} branch"
 cd /opt/fpp
 git checkout ${FPPBRANCH}
+
+# Failsafe (image builds only): a shipped image MUST leave /opt/fpp on a real
+# tracking branch, never a detached HEAD. scripts/git_pull updates via
+# `git rebase @{u}`, which requires an upstream; a detached checkout -- what you
+# get from building a bare release TAG instead of its vX.Y branch -- breaks
+# every user's "Check for Updates" and makes www/common.php misreport the
+# version/branch. This is the last line of defense behind build-images.yml's
+# tag->branch resolver: fail the build loudly rather than publish an
+# un-updatable image (cf. CI run 30107796268, which shipped every 10.0-beta
+# image detached/on master). Normal (non-image) installs are unaffected.
+if [ "${isimage}" = "true" ]; then
+    CURBRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ "${CURBRANCH}" = "HEAD" ] || [ -z "${CURBRANCH}" ]; then
+        echo "FPP - FATAL: /opt/fpp is in detached HEAD after 'git checkout ${FPPBRANCH}'." >&2
+        echo "             A release image must track a branch (e.g. v10.0-beta), not a tag." >&2
+        exit 1
+    fi
+    if ! git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+        echo "FPP - FATAL: branch '${CURBRANCH}' in /opt/fpp has no upstream; self-update would fail." >&2
+        exit 1
+    fi
+    echo "FPP - Image /opt/fpp on branch '${CURBRANCH}' tracking $(git rev-parse --abbrev-ref '@{u}' 2>/dev/null)"
+fi
+
 if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
     # force grabbing these upfront as the make -j4 may fail to fetch them due to locks
     # while initializing
@@ -1394,6 +1493,25 @@ do
     fi
 done
 
+# Turn off PHP extensions FPP does not use.  Every one of these was checked by
+# matching the functions and classes it actually provides (via ReflectionExtension)
+# against all of FPP's PHP sources -- none of them is referenced anywhere.
+#
+# This is a memory and attack-surface change, NOT a boot-time one: measured on a
+# single-core AM335x board it takes cold PHP startup from 1.08s to 0.84s, but
+# php-fpm loads extensions once in the master and forks its workers, so that is
+# ~0.24s of boot, once.  What it does buy is ~1.6MB per worker (9.7MB across the
+# six workers that board runs, and up to ~40MB at pm.max_children=25) on a device
+# with 480MB of RAM -- plus getting FFI out of a web-facing PHP.
+#
+# Deliberately conservative: sqlite3, pdo and pdo_sqlite are unused by FPP core
+# and were measured as safe to drop, but they are left ENABLED because a
+# third-party plugin under /media/plugins could reasonably keep its own data in
+# SQLite, and nothing here can see those plugins to check.
+echo "FPP - Disabling unused PHP extensions"
+phpdismod -v ${ACTUAL_PHPVER} calendar exif ffi ftp phar readline shmop \
+                              sysvmsg sysvsem sysvshm xmlwriter xsl 2>/dev/null || true
+
 # FPP serves very few web clients (usually one or two), so the stock
 # every-30-minutes PHP session garbage collection is overkill. Run it every
 # 2 hours instead, and turn off Persistent so a power-cycled appliance doesn't
@@ -1408,6 +1526,36 @@ OnCalendar=*-*-* 00/2:09:00
 Persistent=false
 EOF
 
+# How far to push the services that are never needed while the box is booting.
+#
+# Everything below is already ordered after fpp_postnetwork so it stays out of the
+# fppinit/networkd window. On a single-core board that is not far enough: the
+# three services that decide when the box is actually usable -- fppd, apache2 and
+# php-fpm -- then have to share one core with all of it, and they lose. Measured
+# on a BBB, php-fpm starts in 2.3s cold on an idle box but took 20.9s at boot
+# (~18s of pure contention), and being the last of the three to come up it alone
+# sets the time-to-usable. Ordering the background services behind all three took
+# ~5s off that, and costs them nothing -- none is needed at boot by definition.
+#
+# Gate on $FPPPLATFORM, NOT on nproc: FPP_Install.sh runs inside a chroot during
+# image builds, where nproc reports the *build host's* core count, so an nproc
+# gate would silently never fire on a BBB image. FPPPLATFORM is derived from the
+# rootfs (bbb.io template + uname -m) and is correct in the chroot. AM335x is the
+# only single-core FPP target.
+#
+# Multi-core Pi and BeagleBone 64 deliberately keep the existing ordering: they
+# have spare cores, so the extra edges would buy nothing while making these units
+# hostage to a slow fppd start and delaying chrony's time sync for no gain.
+# php-fpm is referenced via $ACTUAL_PHPVER (8.4 on Debian 13, 8.3 on Ubuntu 24) --
+# hardcoding a version would name a unit that does not exist, and systemd ignores
+# an After= on an unknown unit silently, quietly dropping half the benefit.
+BG_DEFER_AFTER="fpp_postnetwork.service"
+SHELLINABOX_DEFER_AFTER="fppd.service"
+if [ "${FPPPLATFORM}" = "BeagleBone Black" ]; then
+    BG_DEFER_AFTER="fpp_postnetwork.service fppd.service apache2.service php${ACTUAL_PHPVER}-fpm.service"
+    SHELLINABOX_DEFER_AFTER="${BG_DEFER_AFTER}"
+fi
+
 # The exim4 MTA is only used for occasional outbound notification mail, never at
 # boot. Starting it early costs ~25s on a single-core SBC because it does DNS
 # lookups before the network/resolver is ready (so they time out), and it just
@@ -1416,9 +1564,9 @@ EOF
 # rather than ahead of it, and by then DNS actually resolves so it comes up fast.
 echo "FPP - Deferring exim4 startup until after the network is up"
 mkdir -p /etc/systemd/system/exim4.service.d
-cat > /etc/systemd/system/exim4.service.d/fpp-defer.conf <<'EOF'
+cat > /etc/systemd/system/exim4.service.d/fpp-defer.conf <<EOF
 [Unit]
-After=fpp_postnetwork.service
+After=${BG_DEFER_AFTER}
 EOF
 
 # exim4-base.service is the daily exim queue/db housekeeping oneshot, triggered
@@ -1435,9 +1583,9 @@ cat > /etc/systemd/system/exim4-base.timer.d/fpp.conf <<'EOF'
 Persistent=false
 EOF
 mkdir -p /etc/systemd/system/exim4-base.service.d
-cat > /etc/systemd/system/exim4-base.service.d/fpp-defer.conf <<'EOF'
+cat > /etc/systemd/system/exim4-base.service.d/fpp-defer.conf <<EOF
 [Unit]
-After=fpp_postnetwork.service
+After=${BG_DEFER_AFTER}
 EOF
 
 # chrony: fppinit's postNetwork now does a fast one-shot SNTP clock set, so the
@@ -1447,9 +1595,9 @@ EOF
 # single-core SBCs.
 echo "FPP - Deferring chrony until after the clock is set in postNetwork"
 mkdir -p /etc/systemd/system/chrony.service.d
-cat > /etc/systemd/system/chrony.service.d/fpp-defer.conf <<'EOF'
+cat > /etc/systemd/system/chrony.service.d/fpp-defer.conf <<EOF
 [Unit]
-After=fpp_postnetwork.service
+After=${BG_DEFER_AFTER}
 EOF
 
 # apache2 + php-fpm back the web UI, which isn't needed before fppd. On a
@@ -1476,9 +1624,27 @@ EOF
 # (It's a systemd-sysv-generator unit, but a drop-in still applies.)
 echo "FPP - Deferring shellinabox until after fppd"
 mkdir -p /etc/systemd/system/shellinabox.service.d
-cat > /etc/systemd/system/shellinabox.service.d/fpp-defer.conf <<'EOF'
+cat > /etc/systemd/system/shellinabox.service.d/fpp-defer.conf <<EOF
 [Unit]
-After=fppd.service
+After=${SHELLINABOX_DEFER_AFTER}
+EOF
+
+# rsyslog duplicates the journal into /var/log/syslog, and on these boards that
+# write traffic competes for the SD/eMMC with the reads the boot itself needs --
+# the same storage contention that makes boot times on a BBB swing by ~10s
+# between otherwise identical boots.  Nothing needs it early: journald is the
+# primary, persistent log, and syslog.target has no dependents here.
+#
+# Deferring loses nothing.  syslog.socket is DefaultDependencies=no and
+# Before=sockets.target, so it exists from the very start of boot with an 8M
+# ReceiveBuffer, and rsyslog is TriggeredBy= it -- journald forwards into that
+# socket whether or not rsyslog is running, and rsyslog drains the backlog when
+# it starts.  A whole boot's journal on a BBB is ~95KB, about 1.2% of the buffer.
+echo "FPP - Deferring rsyslog so its writes don't compete with the boot's reads"
+mkdir -p /etc/systemd/system/rsyslog.service.d
+cat > /etc/systemd/system/rsyslog.service.d/fpp-defer.conf <<EOF
+[Unit]
+After=${BG_DEFER_AFTER}
 EOF
 
 if $isimage; then
@@ -1608,6 +1774,24 @@ configure_logging() {
     fi
     if [ -f /etc/logrotate.d/rsyslog ]; then
         sed -i -e "s/weekly/daily/" /etc/logrotate.d/rsyslog
+        # Size backstop: rotate syslog & friends once they cross 200M even
+        # between the daily cron runs, so a mid-day flood can't grow unbounded.
+        # (Belt-and-braces with the rsyslog rate limit below; logrotate only
+        # runs on cron, so the rate limit is the real-time guard.)
+        if ! grep -q "maxsize" /etc/logrotate.d/rsyslog; then
+            sed -i -e "0,/^\tdaily$/s//\tdaily\n\tmaxsize 200M/" /etc/logrotate.d/rsyslog
+        fi
+    fi
+
+    # Rate-limit the local system log socket. Without this, a process that
+    # spams stderr in a tight loop -- e.g. PipeWire's ALSA layer retrying an
+    # unplugged USB sound card ("spa.alsa: ... No such device") -- writes
+    # unbounded lines into /var/log/syslog and can fill the whole disk between
+    # daily log rotations (observed: 400+ GB of syslog from one missing card).
+    # 1000 messages / 5s (~200 msg/s) is well above normal boot/runtime chatter
+    # but caps a runaway logger. Applied to the imuxsock module load line.
+    if [ -f /etc/rsyslog.conf ] && ! grep -q "SysSock.RateLimit" /etc/rsyslog.conf; then
+        sed -i -e 's|^module(load="imuxsock").*|module(load="imuxsock" SysSock.RateLimit.Interval="5" SysSock.RateLimit.Burst="1000") # FPP: throttle runaway loggers|' /etc/rsyslog.conf
     fi
 
     # Disable duplicate logging to save on disk space
@@ -1866,7 +2050,7 @@ EOF
     # 90s on every boot. The settings UI rewrites this line when external storage
     # is chosen, so commenting it by default loses no functionality.
     echo "#####################################" >> /etc/fstab
-    echo "#/dev/sda1     ${FPPHOME}/media  auto    defaults,nonempty,noatime,nodiratime,exec,nofail,flush,uid=500,gid=500  0  0" >> /etc/fstab
+    echo "#/dev/sda1     ${FPPHOME}/media  auto    defaults,nonempty,noatime,nodiratime,exec,nofail,flush,uid=1000,gid=1000  0  0" >> /etc/fstab
     echo "#####################################" >> /etc/fstab
 
     #######################################
@@ -1900,10 +2084,52 @@ configure_apache() {
     sed -i -e "s/APACHE_RUN_USER=.*/APACHE_RUN_USER=${FPPUSER}/"   /etc/apache2/envvars
     sed -i -e "s/APACHE_RUN_GROUP=.*/APACHE_RUN_GROUP=${FPPUSER}/" /etc/apache2/envvars
     sed -i -e "s#APACHE_LOG_DIR=.*#APACHE_LOG_DIR=${FPPHOME}/media/logs#" /etc/apache2/envvars
-    # Listen on the IPv6 wildcard; with net.ipv6.bindv6only=0 (the
-    # Linux default) this dual-binds and serves both v4 and v6 clients
-    # from a single socket.
-    sed -i -e "s/Listen 8080.*/Listen [::]:80/" -e "s/^Listen 80$/Listen [::]:80/" /etc/apache2/ports.conf
+    # Port 80 listener. The IPv6 wildcard is preferred: with
+    # net.ipv6.bindv6only=0 (the Linux default) it dual-binds and serves
+    # both v4 and v6 clients from a single socket. But that bind is *fatal*
+    # to apache when the kernel has no IPv6 at all --
+    #   AH00078: alloc_listener: failed to get a socket for ::
+    #   AH00526: Syntax error on line 5 of /etc/apache2/ports.conf
+    # -- and apache then refuses to start, taking the entire web UI with it.
+    # That happens on any box booted with ipv6.disable=1, and on any box
+    # running a kernel whose ipv6 module is missing.
+    #
+    # So decide at *start* time rather than install time: apachectl sources
+    # envvars on every start/restart/configtest, so a box that gains or
+    # loses IPv6 later recovers on its own without reinstalling.
+    cat > /etc/apache2/ports.conf <<'PORTS_EOF'
+# Managed by FPP -- see configure_apache() in SD/FPP_Install.sh.
+# FPP_HAVE_IPV6 is defined from /etc/apache2/envvars when the running
+# kernel actually has IPv6, so a box without it still serves over IPv4
+# instead of failing to start apache at all.
+<IfDefine FPP_HAVE_IPV6>
+Listen [::]:80
+</IfDefine>
+<IfDefine !FPP_HAVE_IPV6>
+Listen 80
+</IfDefine>
+
+<IfModule ssl_module>
+	Listen 443
+</IfModule>
+
+<IfModule mod_gnutls.c>
+	Listen 443
+</IfModule>
+PORTS_EOF
+
+    if ! grep -q FPP_HAVE_IPV6 /etc/apache2/envvars; then
+        cat >> /etc/apache2/envvars <<'ENVVARS_EOF'
+
+## FPP: only ask apache for the IPv6 wildcard listener when the running
+## kernel has IPv6. /proc/sys/net/ipv6 is absent both when the module is
+## missing and when the kernel booted with ipv6.disable=1, which are exactly
+## the cases where "Listen [::]:80" aborts apache startup.
+if [ -d /proc/sys/net/ipv6 ]; then
+	export APACHE_ARGUMENTS="${APACHE_ARGUMENTS} -D FPP_HAVE_IPV6"
+fi
+ENVVARS_EOF
+    fi
 
     cat /opt/fpp/etc/apache2.site   > /etc/apache2/sites-enabled/000-default.conf
     cat /opt/fpp/etc/apache2.status > /etc/apache2/mods-enabled/status.conf
@@ -1915,7 +2141,7 @@ configure_apache() {
 
     local mod
     for mod in mpm_event http2 cgi rewrite expires proxy proxy_http proxy_http2 \
-               proxy_html headers; do
+               proxy_html headers proxy_wstunnel; do
         a2enmod "$mod"
     done
     a2enmod proxy_fcgi setenvif
@@ -2032,12 +2258,6 @@ finalize_platform_beaglebone_black() {
     systemctl disable bbbio-set-sysconf
     echo "USB_UMTPRD_DISABLED=yes" >> /etc/default/bb-boot
 
-    if [ ! -f "/opt/source/bb.org-overlays/Makefile" ]; then
-        mkdir -p /opt/source
-        cd /opt/source
-        git clone https://github.com/beagleboard/bb.org-overlays
-    fi
-
     cd /opt/fpp/capes/drivers/bbb
     make -j ${CPUS}
     make install
@@ -2111,6 +2331,14 @@ install_fpp_services() {
         cp /usr/share/pipewire/client.conf /etc/pipewire/client.conf
     fi
 
+    # NOTE: do not build/install upstream's GStreamer PipeWire plugin here.
+    # Replacing the distro plugin with a newer upstream one breaks audio
+    # outright unless it matches the libpipewire the process actually loads:
+    # a 1.6.0 plugin against the distro's 1.4.2 library leaves the pipewiresink
+    # stream node suspended, so playlists run silently with no error anywhere.
+    # scripts/build_pipewire_gst_plugin.sh is manual-only and version-guarded
+    # for that reason.  See upgrade/124 and upgrade/125.
+
     if $isimage; then
         mkdir -p /etc/networkd-dispatcher/initialized.d
         cp -a /opt/fpp/etc/networkd-dispatcher/* /etc/networkd-dispatcher
@@ -2124,6 +2352,17 @@ install_fpp_services() {
     # to keep its ~entropy-gathering startup off the boot path. Every FPP target
     # has a hardware RNG (AM335x omap-rng, bcm2835-rng, ...), so it stays idle.
     systemctl disable haveged.service 2>/dev/null || true
+
+    # atd runs one-shot jobs queued with at(1). FPP never queues any -- scheduling
+    # goes through fppd's own scheduler and cron -- so on a stock box the daemon
+    # starts, finds an empty spool and idles forever.
+    systemctl disable atd.service 2>/dev/null || true
+
+    # ufw ships enabled but unconfigured, so it starts, applies no rules (`ufw
+    # status` reports inactive) and exits.  FPP does not manage it and nothing in
+    # the tree references it; an admin who wants a firewall can enable it, which
+    # is what `ufw enable` does anyway.
+    systemctl disable ufw.service 2>/dev/null || true
     systemctl daemon-reload
 
     local svc
@@ -2255,7 +2494,64 @@ configure_swap() {
     fi
 }
 
+# Strip payload that a shipped image has no use for.
+#
+# This is not only about download size. flash_storage.sh copies the running root
+# filesystem to eMMC with a file-level rsync, so on the "Copy to eMMC" path
+# every file costs a create + metadata write on top of its bytes -- and the
+# stock rootfs carries roughly ten thousand tiny man/locale files, which show up
+# as flash time out of all proportion to the megabytes they occupy.
+#
+# The dpkg drop-in is what makes this stick: without it, the next apt install on
+# the device (a plugin's dependency, a user package) unpacks a fresh set of man
+# pages and translations right back onto the image.
+slim_image() {
+    echo "FPP - Slimming image: docs, man pages, non-English locales"
+    mkdir -p /etc/dpkg/dpkg.cfg.d
+    cat > /etc/dpkg/dpkg.cfg.d/01_fpp_slim <<'DPKG_EOF'
+# FPP ships an appliance image: no changelogs, no man pages, English only.
+# path-include lines are evaluated after the excludes, so the en* catalogs,
+# locale.alias and the per-package copyright files survive the exclusions
+# above them. The copyright files stay because these images are redistributed
+# publicly and that is where each package's license text lives.
+path-exclude=/usr/share/doc/*
+path-include=/usr/share/doc/*/copyright
+path-exclude=/usr/share/man/*
+path-exclude=/usr/share/info/*
+path-exclude=/usr/share/groff/*
+path-exclude=/usr/share/locale/*
+path-include=/usr/share/locale/en*
+path-include=/usr/share/locale/locale.alias
+DPKG_EOF
+
+    rm -rf /usr/share/man/* /usr/share/info/* /usr/share/groff/*
+    rm -rf /var/cache/man/*
+    find /usr/share/doc -mindepth 1 ! -type d ! -name copyright -delete
+    find /usr/share/doc -mindepth 1 -type d -empty -delete
+    # Message catalogs only -- the generated locale-archive that programs
+    # actually run against lives in /usr/lib/locale and is untouched.
+    find /usr/share/locale -mindepth 1 -maxdepth 1 -type d ! -name 'en*' -exec rm -rf {} +
+
+    # Wifi firmware for buses these boards do not have: ath10k/ath11k/ath12k and
+    # rtw89 are PCIe/SDIO-only parts. An FPP controller's wifi is a USB dongle
+    # (ath9k_htc, rtl8xxx/rtw88, mt7601u et al), whose blobs live in other
+    # directories and are left alone. Deleted rather than dpkg path-excluded so
+    # "apt-get install --reinstall firmware-atheros" can put them back if some
+    # PCIe-equipped board ever does need them.
+    echo "FPP - Removing PCIe-only wifi firmware"
+    rm -rf /usr/lib/firmware/ath10k /usr/lib/firmware/ath11k \
+           /usr/lib/firmware/ath12k /usr/lib/firmware/rtw89
+
+    # apt's binary caches, rebuilt on demand by the next apt run. (The package
+    # lists in /var/lib/apt/lists are deliberately kept: third-party plugin
+    # installers run apt-get install without always running apt-get update
+    # first, and an empty list turns that into "unable to locate package".)
+    rm -f /var/cache/apt/*.bin
+}
+
 finalize_image_post_build() {
+    slim_image
+
     systemctl disable dnsmasq
     systemctl unmask hostapd
     systemctl disable hostapd
