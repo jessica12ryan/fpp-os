@@ -253,7 +253,7 @@ async function listDrivesLinux() {
 
 // ── Download ISO ──────────────────────────────────────────────────────────────
 ipcMain.handle('download-iso', async (_event, url, isoName) => {
-  const destPath = path.join(app.getPath('downloads'), isoName)
+  const destPath = path.join(app.getPath('downloads'), path.basename(isoName))
   return new Promise((resolve, reject) => {
     const follow = (url) => {
       const mod = url.startsWith('https') ? https : http
@@ -309,15 +309,19 @@ function promptForPassword(message) {
 // ── Flash via dd with periodic progress from SIGINFO ─────────────────────────
 function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
   const totalSize = isZip ? null : fs.statSync(imagePath).size
-  const unmount = `/usr/sbin/diskutil unmountDisk force '${device}' 2>/dev/null || true`
+  const esc = s => s.replace(/'/g, "'\\''")
+  const safeImage = esc(imagePath)
+  const safeDevice = esc(device)
+  const safeRaw = esc(rawDevice)
+  const unmount = `/usr/sbin/diskutil unmountDisk force '${safeDevice}' 2>/dev/null || true`
 
   // Run dd in background, send SIGINFO every 1s to get progress
   const ddJob = isZip
-    ? `/usr/bin/unzip -p '${imagePath}' | /bin/dd of='${rawDevice}' bs=4M oflag=sync`
-    : `/bin/dd if='${imagePath}' of='${rawDevice}' bs=4M oflag=sync`
+    ? `/usr/bin/unzip -p '${safeImage}' | /bin/dd of='${safeRaw}' bs=4M oflag=sync`
+    : `/bin/dd if='${safeImage}' of='${safeRaw}' bs=4M oflag=sync`
 
   // Wrap: background dd, monitor with SIGINFO, capture exit code
-  const shellCmd = `${unmount}; ( ${ddJob} & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ) || { echo FALLBACK >&2; ${unmount}; ( /bin/dd if='${imagePath}' of='${device}' bs=4M oflag=sync & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ); }`
+  const shellCmd = `${unmount}; ( ${ddJob} & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ) || { echo FALLBACK >&2; ${unmount}; ( /bin/dd if='${safeImage}' of='${safeDevice}' bs=4M oflag=sync & PID=$!; while kill -0 $PID 2>/dev/null; do kill -INFO $PID 2>/dev/null; /bin/sleep 1; done; wait $PID; exit $? ); }`
 
   return new Promise((resolve, reject) => {
     const child = spawn('/usr/bin/sudo', ['-S', '-p', '', 'bash', '-c', shellCmd], {
@@ -353,7 +357,7 @@ function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
     child.stdin.end()
 
     child.on('close', code => {
-      if (code === 0 || stderrBuf.includes('FALLBACK')){
+      if (code === 0){
         if (totalSize) mainWindow.webContents.send('flash-progress', { total: totalSize, pct: 100, text: 'Complete' })
         resolve()
       } else if (stderrBuf.includes('Sorry') || stderrBuf.includes('incorrect'))
@@ -404,7 +408,7 @@ ipcMain.handle('check-flasher-update', async () => {
 
 // ── Download flasher update DMG to Downloads ────────────────────────────────
 ipcMain.handle('download-flasher-update', async (_event, url, name) => {
-  const dest = path.join(app.getPath('downloads'), name)
+  const dest = path.join(app.getPath('downloads'), path.basename(name))
   return new Promise((resolve, reject) => {
     const follow = u => {
       const mod = u.startsWith('https') ? https : http
