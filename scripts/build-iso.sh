@@ -73,7 +73,7 @@ download_iso() {
     local stable_base="https://cdimage.debian.org/cdimage/release/current/${ARCH}/iso-cd"
     local stable_iso
     stable_iso=$(curl -sf "${stable_base}/" 2>/dev/null \
-        | grep -oP "debian-[\d.]+-${ARCH}-netinst\.iso" | head -1 || true)
+        | grep -oE "debian-[0-9.]+-${ARCH}-netinst\.iso" | head -1 || true)
     if [[ -n "$stable_iso" ]]; then
         iso_url="${stable_base}/${stable_iso}"
         iso_filename="${stable_iso}"
@@ -91,7 +91,7 @@ download_iso() {
     fi
 
     info "Downloading: $iso_url"
-    curl -L --progress-bar -o "${ORIGINAL_ISO}" "$iso_url" \
+    curl -fL --progress-bar -o "${ORIGINAL_ISO}" "$iso_url" \
         || error "Download failed."
 
     # Verify SHA256 checksum
