@@ -1,3 +1,30 @@
+## [1.1.0] - 2026-09-15
+
+- Merge pull request #41 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-56e86fd9c9 (Ryan)
+- Bump js-yaml in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #39 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.12.0 (Ryan)
+- Bump globals from 17.11.0 to 17.12.0 in /flasher (dependabot[bot])
+- Merge pull request #40 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.10.0 (Ryan)
+- Merge pull request #38 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.2.0 (Ryan)
+- Bump eslint from 10.9.1 to 10.10.0 in /flasher (dependabot[bot])
+- Bump electron from 44.0.0 to 44.2.0 in /flasher (dependabot[bot])
+- Fix build-iso.sh: curl -fL fail on HTTP error, use portable grep -oE (jessica12ryan)
+- Fix flasher: sanitize download paths, escape dd shell args, fix flash false-success (jessica12ryan)
+- Merge pull request #37 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-8b1833f05c (jessica12ryan)
+- Merge pull request #36 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.0.0 (jessica12ryan)
+- Bump @xmldom/xmldom (dependabot[bot])
+- Merge pull request #35 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.9.1 (jessica12ryan)
+- Merge pull request #34 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-8839a8980a (jessica12ryan)
+- Bump electron from 43.4.1 to 44.0.0 in /flasher (dependabot[bot])
+- Bump eslint from 10.9.0 to 10.9.1 in /flasher (dependabot[bot])
+- Bump fast-uri in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #33 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.9.0 (jessica12ryan)
+- Merge pull request #32 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-43.4.1 (jessica12ryan)
+- Bump eslint from 10.8.1 to 10.9.0 in /flasher (dependabot[bot])
+- Bump electron from 43.4.0 to 43.4.1 in /flasher (dependabot[bot])
+
+---
+
 ## [1.0.0] - 2026-08-21
 
 - Update README to reflect current FPP-OS status (jessica12ryan)
