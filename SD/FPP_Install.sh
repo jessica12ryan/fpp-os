@@ -66,8 +66,8 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # and shown in /etc/issue. Override via env (build-image-pi.sh passes the
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
-FPPIMAGEVER=${FPPIMAGEVER:-"2026-08"}
-FPPCFGVER="133"
+FPPIMAGEVER=${FPPIMAGEVER:-"2026-09"}
+FPPCFGVER="143"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -660,11 +660,12 @@ install_base_packages() {
                       libmosquitto-dev mosquitto-clients mosquitto libzstd-dev lzma zstd gpiod libgpiod-dev libjsoncpp-dev libcurl4-openssl-dev libnl-3-dev libnl-genl-3-dev \
                       fonts-freefont-ttf flex bison pkg-config libasound2-dev libsdl2-dev libsdl3-dev mesa-common-dev qrencode libusb-1.0-0-dev \
                       pipewire pipewire-bin pipewire-alsa pipewire-pulse pipewire-jack pipewire-audio-client-libraries wireplumber \
-                      libpipewire-0.3-dev libspa-0.2-bluetooth pulseaudio-utils linuxptp \
+                      libpipewire-0.3-dev libspa-0.2-bluetooth pulseaudio-utils linuxptp libsamplerate0-dev \
                       gstreamer1.0-tools gstreamer1.0-plugins-base gstreamer1.0-plugins-base-apps gstreamer1.0-plugins-good gstreamer1.0-alsa \
                       gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-pipewire \
                       gstreamer1.0-libav gstreamer1.0-gl gstreamer1.0-x \
                       libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-0 \
+                      libgstrtspserver-1.0-dev \
                       flex bison pkg-config libasound2-dev python3-setuptools libssl-dev libtool bsdextrautils iw rsyslog tzdata libsystemd-dev \
                       python3-pip yt-dlp"
 
@@ -1738,7 +1739,12 @@ mkdir ${FPPHOME}/.ssh
 chown ${FPPUSER}:${FPPUSER} ${FPPHOME}/.ssh
 chmod 700 ${FPPHOME}/.ssh
 
-mkdir ${FPPHOME}/media
+# -p, not a bare mkdir: an upgrade script run earlier in this same install (see
+# upgrade_config above) can legitimately have created a subdirectory of the
+# media dir already, and failing here aborts the entire install under set -e.
+# The chown/chmod below then puts an early-created dir back under fpp's
+# ownership either way.
+mkdir -p ${FPPHOME}/media
 chown ${FPPUSER}:${FPPUSER} ${FPPHOME}/media
 chmod 775 ${FPPHOME}/media
 
@@ -1997,6 +2003,9 @@ EOF
     # remove exim4 panic log so exim4 doesn't throw an alert about a non-zero log
     # file due to some odd error thrown during inital setup
     rm -f /var/log/exim4/paniclog
+    # FPP manages implicit-TLS for port 465 via /etc/exim4/conf.d/main/99_fpp_smarthost.
+    # The default smarthost here is ::587 (STARTTLS), so ensure no stale smtps macro ships in the image.
+    rm -f /etc/exim4/conf.d/main/99_fpp_smarthost
     #update config and restart exim
     update-exim4.conf
 
@@ -2094,20 +2103,28 @@ configure_apache() {
     # That happens on any box booted with ipv6.disable=1, and on any box
     # running a kernel whose ipv6 module is missing.
     #
-    # So decide at *start* time rather than install time: apachectl sources
-    # envvars on every start/restart/configtest, so a box that gains or
-    # loses IPv6 later recovers on its own without reinstalling.
+    # <IfFile> is evaluated every time the config is parsed -- on start, on
+    # configtest, and on the SIGUSR1 re-read behind "systemctl reload" -- so
+    # the choice is never baked into how the master happened to be started,
+    # and a box that gains or loses IPv6 later corrects itself. (Contrast an
+    # <IfDefine> fed from envvars: the define lives on the master's argv, so a
+    # reload re-reads this file with whatever defines the *running* master
+    # started with and can silently pick the wrong branch.)
+    #
+    # <IfFile> needs apache 2.4.34+; the oldest release FPP installs on is
+    # well past that (Debian buster ships 2.4.38).
     cat > /etc/apache2/ports.conf <<'PORTS_EOF'
 # Managed by FPP -- see configure_apache() in SD/FPP_Install.sh.
-# FPP_HAVE_IPV6 is defined from /etc/apache2/envvars when the running
-# kernel actually has IPv6, so a box without it still serves over IPv4
+# /proc/sys/net/ipv6 is absent both when the ipv6 module is missing and when
+# the kernel booted with ipv6.disable=1 -- exactly the cases where
+# "Listen [::]:80" aborts apache startup -- so such a box serves over IPv4
 # instead of failing to start apache at all.
-<IfDefine FPP_HAVE_IPV6>
+<IfFile /proc/sys/net/ipv6>
 Listen [::]:80
-</IfDefine>
-<IfDefine !FPP_HAVE_IPV6>
+</IfFile>
+<IfFile !/proc/sys/net/ipv6>
 Listen 80
-</IfDefine>
+</IfFile>
 
 <IfModule ssl_module>
 	Listen 443
@@ -2118,17 +2135,10 @@ Listen 80
 </IfModule>
 PORTS_EOF
 
-    if ! grep -q FPP_HAVE_IPV6 /etc/apache2/envvars; then
-        cat >> /etc/apache2/envvars <<'ENVVARS_EOF'
-
-## FPP: only ask apache for the IPv6 wildcard listener when the running
-## kernel has IPv6. /proc/sys/net/ipv6 is absent both when the module is
-## missing and when the kernel booted with ipv6.disable=1, which are exactly
-## the cases where "Listen [::]:80" aborts apache startup.
-if [ -d /proc/sys/net/ipv6 ]; then
-	export APACHE_ARGUMENTS="${APACHE_ARGUMENTS} -D FPP_HAVE_IPV6"
-fi
-ENVVARS_EOF
+    # Drop the APACHE_ARGUMENTS define an older FPP appended here; ports.conf
+    # probes for IPv6 itself now and nothing reads FPP_HAVE_IPV6 any more.
+    if grep -q FPP_HAVE_IPV6 /etc/apache2/envvars; then
+        sed -i '/^## FPP: only ask apache for the IPv6/,/^fi$/d' /etc/apache2/envvars
     fi
 
     cat /opt/fpp/etc/apache2.site   > /etc/apache2/sites-enabled/000-default.conf
@@ -2421,6 +2431,21 @@ fi
 
 install_fpp_services
 
+#######################################
+# FPP's Web/HTTP video inputs resolve YouTube URLs by shelling out to yt-dlp.
+# The packaged yt-dlp is frozen for the life of the Debian release while
+# YouTube reworks its player every few months, so an image built today ships a
+# yt-dlp that stops resolving anything within months -- the video input just
+# never produces a frame. Install upstream's standalone build (into
+# /usr/local/bin, which precedes /usr/bin in fppd's PATH, so it shadows the
+# package rather than replacing it) and leave the daily refresh behind.
+# Best-effort: no internet at install time just means the packaged yt-dlp
+# stands in until the first daily run that has some.
+echo "FPP - Installing upstream yt-dlp and its daily refresh"
+cp /opt/fpp/etc/update-ytdlp /etc/cron.daily/
+chmod 0755 /etc/cron.daily/update-ytdlp
+/opt/fpp/scripts/update_ytdlp.sh || true
+
 if $isimage; then
     finalize_image_services
 fi
@@ -2449,7 +2474,9 @@ configure_hostapd() {
 #     + systemd-zram-setup@zram0.service + dev-zram0.swap + rpi-zram-writeback)
 #     that handles zram setup automatically. Don't write zram-tools config
 #     on Pi -- it's read by a service we'd be disabling, and would just be
-#     dead clutter.
+#     dead clutter. We do pin its mechanism to plain zram, dropping the
+#     /var/swap loop device and the writeback timer that go with the stock
+#     "zram+file" default -- see configure_swap() below for why.
 #   - On BeagleBone (BBB / BB64) we drive zram via zram-tools, set up directly
 #     in fpp_postnetwork (FPPINIT startZRAMSwap) rather than at boot. zram isn't
 #     needed early and setting it up during the boot critical path just adds
@@ -2459,6 +2486,41 @@ configure_hostapd() {
 #     its vendor config below.
 configure_swap() {
     if [ "$FPPPLATFORM" == "Raspberry Pi" ]; then
+        # Drop rpi-swap's default "zram+file" mechanism for plain "zram".
+        #
+        # In zram+file, /var/swap is attached to a loop device and handed to
+        # zram0 as a WRITEBACK target -- it is not swapped on, so it adds no
+        # usable swap (see DiskBackedSwapKB in scripts/functions). What it does
+        # add is rpi-setup-loop@var-swap.service on the boot critical path:
+        # swap.target -> dev-zram0.swap -> systemd-zram-setup@zram0 ->
+        # rpi-setup-loop@var-swap, and sysinit.target is ordered after
+        # swap.target, so that one unit gates the entire boot.
+        #
+        # Its ExecStartPost, rpi-wait-backingfile-symlink, waits for udev's
+        # /dev/disk/by-backingfile/var-swap symlink with an inotify loop that
+        # arms its watch AFTER testing for the symlink. Lose that race -- the
+        # symlink lands in the gap, or udev unlinks and recreates it while
+        # re-processing loop0 -- and the script blocks on an event that will
+        # never come again. The unit is Type=oneshot, whose TimeoutStartSec
+        # defaults to infinity, so the boot hangs forever on
+        # "A start job is running for rpi-setup-loop@var-swap.service", with
+        # no console and no ssh. Only a power cycle clears it, and since it is
+        # a race it clears on the next boot, which makes it look sporadic.
+        #
+        # zram itself is unchanged: same generator, same sizing, same
+        # dev-zram0.swap. We only drop the writeback file we were not using --
+        # the image already deletes /var/swap -- and with it the loop unit.
+        # rpi-swap cleans up a leftover /var/swap itself under this mechanism,
+        # via rpi-remove-swap-file@, pulled in by multi-user.target well off
+        # the boot path.
+        if [ -f /etc/rpi/swap.conf ]; then
+            mkdir -p /etc/rpi/swap.conf.d
+            cat > /etc/rpi/swap.conf.d/10-fpp-zram-only.conf <<'SWAP_EOF'
+# Installed by FPP. See configure_swap() in SD/FPP_Install.sh.
+[Main]
+Mechanism=zram
+SWAP_EOF
+        fi
         # Just sysctl tuning; rpi-swap handles the actual zram device.
         echo "vm.swappiness=1" >> /etc/sysctl.d/10-swap.conf
         echo "vm.vfs_cache_pressure=90" >> /etc/sysctl.d/10-swap.conf
