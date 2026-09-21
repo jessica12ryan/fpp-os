@@ -12,7 +12,7 @@ Users are strongly encouraged to keep up to date with the latest release.
 
 ## Reporting a Vulnerability
 
-If you discover a security issue in this plugin, please open a private issue or
+If you discover a security issue in this repo, please open a private issue or
 contact the maintainer via the GitHub repository at
 https://github.com/jessica12ryan/fpp-os/security/advisories
 
