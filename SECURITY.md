@@ -12,13 +12,12 @@ Users are strongly encouraged to keep up to date with the latest release.
 
 ## Reporting a Vulnerability
 
-FPP-OS is designed to run as an appliance on a secured network and is not
-intended to be exposed directly to the internet.
+If you discover a security issue in this plugin, please open a private issue or
+contact the maintainer via the GitHub repository at
+https://github.com/jessica12ryan/fpp-os/security/advisories
 
-Security vulnerabilities can be reported by opening a public issue on
-GitHub. Fixes should be proposed via the standard Pull Request process.
-
-Vulnerabilities reported through other channels will not be triaged.
+Please do **not** report security issues through the public issue tracker if they
+could be exploited before a fix is released.
 
 ## Security Considerations
 
