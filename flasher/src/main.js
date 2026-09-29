@@ -309,7 +309,7 @@ function promptForPassword(message) {
 // ── Flash via dd with periodic progress from SIGINFO ─────────────────────────
 function flashWithProgress(imagePath, device, rawDevice, isZip, password) {
   const totalSize = isZip ? null : fs.statSync(imagePath).size
-  const esc = s => s.replace(/'/g, "'\\''")
+  const esc = s => s.replace(/'/g, '\'\\\'\'')
   const safeImage = esc(imagePath)
   const safeDevice = esc(device)
   const safeRaw = esc(rawDevice)
