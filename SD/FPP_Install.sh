@@ -67,7 +67,7 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
 FPPIMAGEVER=${FPPIMAGEVER:-"2026-09"}
-FPPCFGVER="143"
+FPPCFGVER="150"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -1133,6 +1133,11 @@ EOF
 # Enable SPI in device tree, but keep the cs pins free
 dtparam=spi=on
 dtoverlay=spi0-0cs
+# SPI1 enabled with nothing muxed onto the header and no chip select taken --
+# see capes/drivers/pi/fpp-spi1-nopins.dts.  Its data pins are muxed only by
+# whoever calls configPin("spi") on P1-35/38/40, which also drives its own
+# chip select from userspace.
+dtoverlay=fpp-spi1-nopins
 
 # Enable PCIe for NVME storage (Gen2 is the Pi 5's certified speed; Gen3
 # is an overclock that some NVMe HATs/drives fail to train reliably at)
@@ -1170,7 +1175,11 @@ dtoverlay=miniuart-bt
 # set just carved ~180MB out of usable RAM. Unset lets the firmware pick its
 # own default (64 below 1GB, 76 at 1GB and above), which is what we want.
 [pi5]
-dtparam=uart0=on
+# uart0 enabled with nothing muxed onto the header -- see
+# capes/drivers/pi/fpp-uart0-nopins.dts.  "dtparam=uart0=on" would claim
+# GPIO14 and GPIO15 at boot, and under strict pinmux FPP could never take
+# either back for a cape's own use.
+dtoverlay=fpp-uart0-nopins
 [pi02]
 dtparam=audio=off
 hdmi_force_hotplug=1
@@ -1563,6 +1572,8 @@ fi
 # adds contention on the boot critical path. Order it after fpp_postnetwork:
 # fppd is also After=fpp_postnetwork, so exim starts in parallel with fppd
 # rather than ahead of it, and by then DNS actually resolves so it comes up fast.
+# (install_fpp_services disables the daemon outright; this only matters if an
+# admin turns it back on.)
 echo "FPP - Deferring exim4 startup until after the network is up"
 mkdir -p /etc/systemd/system/exim4.service.d
 cat > /etc/systemd/system/exim4.service.d/fpp-defer.conf <<EOF
@@ -2373,6 +2384,19 @@ install_fpp_services() {
     # the tree references it; an admin who wants a firewall can enable it, which
     # is what `ufw enable` does anyway.
     systemctl disable ufw.service 2>/dev/null || true
+
+    # exim4: FPP and its plugins only hand mail to the sendmail binary, which
+    # delivers it from the submitting process, so the exim daemon has nothing to
+    # do. It isn't free, though: with no TLS certificate configured it generates
+    # a self-signed RSA cert at startup, and since that cert only lives an hour,
+    # again at the first queue-run wakeup after it expires (every 90 minutes in
+    # practice) -- 5-10s of CPU each time on a single-core board. Its SMTP
+    # listener on 127.0.0.1:25 is unused attack surface as well.
+    # fpp-exim-queue.timer takes over the one useful thing it did, retrying
+    # deferred mail. See also upgrade/148.
+    systemctl disable exim4.service 2>/dev/null || true
+    cp /opt/fpp/etc/systemd/fpp-exim-queue.timer /lib/systemd/system/
+    systemctl enable fpp-exim-queue.timer
     systemctl daemon-reload
 
     local svc
