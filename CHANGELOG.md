@@ -2,12 +2,6 @@
 
 - Clean up CHANGELOG and update FPP version (jessica12ryan)
 - Update FPP version in build-release workflow (jessica12ryan)
-
----
-
-## [1.1.1] - 2026-10-03
-
-- Update FPP version in build-release workflow (jessica12ryan)
 - Merge pull request #46 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-2a172af73f (jessica12ryan)
 - Merge pull request #47 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-7605d37c2e (jessica12ryan)
 - Bump the npm_and_yarn group across 1 directory with 2 updates (dependabot[bot])
