@@ -16,7 +16,7 @@ on:
         required: false
         default: ''
       fpp_install_branch:
-        description: 'FPP branch or version to install (e.g. master, 9.5.3)'
+        description: 'FPP branch or version to install (e.g. master, v10.2)'
         required: true
         default: 'master'
 
