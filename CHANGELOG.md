@@ -1,3 +1,23 @@
+## [1.1.1] - 2026-10-03
+
+- Merge pull request #46 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-2a172af73f (jessica12ryan)
+- Merge pull request #47 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-7605d37c2e (jessica12ryan)
+- Bump the npm_and_yarn group across 1 directory with 2 updates (dependabot[bot])
+- Bump undici in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+- Merge pull request #45 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.4.5 (jessica12ryan)
+- Bump electron from 44.4.3 to 44.4.5 in /flasher (dependabot[bot])
+- Fix escape character in flashWithProgress function (jessica12ryan)
+- Merge pull request #44 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.11.0 (Ryan)
+- Merge pull request #43 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.4.3 (Ryan)
+- Bump eslint from 10.10.0 to 10.11.0 in /flasher (dependabot[bot])
+- Bump electron from 44.3.0 to 44.4.3 in /flasher (dependabot[bot])
+- Clarify instructions for reporting vulnerabilities (Ryan)
+- Revise security vulnerability reporting instructions (Ryan)
+- Merge pull request #42 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.3.0 (Ryan)
+- Bump electron from 44.2.0 to 44.3.0 in /flasher (dependabot[bot])
+
+---
+
 ## [1.1.0] - 2026-09-15
 
 - Merge pull request #41 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-56e86fd9c9 (Ryan)
