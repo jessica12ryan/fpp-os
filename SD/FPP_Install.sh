@@ -67,7 +67,7 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
 FPPIMAGEVER=${FPPIMAGEVER:-"2026-09"}
-FPPCFGVER="150"
+FPPCFGVER="160"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -77,6 +77,16 @@ OSVER="UNKNOWN"
 # Make sure the sbin directories are on the path as we will
 # need the adduser/addgroup/ldconfig/a2enmod/etc... commands
 PATH=$PATH:/usr/sbin:/sbin
+
+# git refuses to run without HOME ("fatal: $HOME not set"), and systemd
+# does not set HOME for a system service, so launching the installer from a
+# unit (systemd-run, a provisioning service) rather than a login shell
+# aborts at the clone. Fall back to the invoking user's passwd home so the
+# clone and the "git config --global" below work there too.
+if [ -z "${HOME:-}" ]; then
+    HOME=$(getent passwd "$(id -u)" | cut -d: -f6)
+    export HOME=${HOME:-/root}
+fi
 
 # Under docker / chroot (systemd isn't PID 1), runtime systemctl commands
 # (start/stop/restart/reload/is-active/daemon-reload/...) fail because there
@@ -104,7 +114,16 @@ PATH=$PATH:/usr/sbin:/sbin
 if [ ! -d /run/systemd/system ]; then
     _real_systemctl="$(command -v systemctl)"
     systemctl() {
-        case "$1" in
+        # Dispatch on the verb, not $1: options such as --global or --now
+        # can come first ("systemctl --global mask ...").
+        local _verb="" _arg
+        for _arg in "$@"; do
+            case "$_arg" in
+                -*) ;;
+                *) _verb="$_arg"; break ;;
+            esac
+        done
+        case "$_verb" in
             disable|unmask)
                 "$_real_systemctl" --no-reload --no-warn "$@" 2>/dev/null || true
                 ;;
@@ -458,7 +477,11 @@ rm /etc/issue.new
 #######################################
 # Setup for U.S. users mainly
 echo "FPP - Setting US keyboard layout and locale"
-sed -i "s/XKBLAYOUT=".*"/XKBLAYOUT="us"/" /etc/default/keyboard
+# Minimal bases such as the Debian cloud images don't ship
+# keyboard-configuration, so there is no keymap to change.
+if [ -f /etc/default/keyboard ]; then
+    sed -i "s/XKBLAYOUT=".*"/XKBLAYOUT="us"/" /etc/default/keyboard
+fi
 echo "LANG=en_US.UTF-8" > /etc/default/locale
 
 # end of if desktop
@@ -1464,7 +1487,10 @@ fi
 
 #######################################
 # Upgrade the config if needed
-bash ${FPPDIR}/scripts/upgrade_config -notee
+# Non-fatal by design (this script runs under set -e): a failed migration
+# must not abort a fresh install. upgrade_config exits non-zero on failure
+# so the op log records it; the stale version file makes the next run retry.
+bash ${FPPDIR}/scripts/upgrade_config -notee || echo "WARNING: config upgrade reported failure, continuing install"
 
 
 #######################################
@@ -1500,6 +1526,11 @@ do
         sed -i -e "s/^pm.start_servers.*/pm.start_servers = 3/" ${PHPDIR}/${FILE}
         sed -i -e "s/^;pm.max_requests.*/pm.max_requests = 300/" ${PHPDIR}/${FILE}
         sed -i -e "s+^;clear_env.*+clear_env = no+g" ${PHPDIR}/${FILE}
+        # Never used by FPP; off, where nothing can turn it back on, as PHP's
+        # workaround for CVE-2026-109619. See upgrade/160.
+        if ! grep -q '^php_admin_value\[session\.upload_progress\.enabled\]' ${PHPDIR}/${FILE}; then
+            printf '\n; FPP: upload progress is never used; off as the CVE-2026-109619 workaround\nphp_admin_value[session.upload_progress.enabled] = 0\n' >> ${PHPDIR}/${FILE}
+        fi
     fi
 done
 
@@ -1668,26 +1699,41 @@ if $isimage; then
 fi
 
 #######################################
-# Create the fpp user at UID/GID 1000 plus hardware group memberships.
-# Evicts any pre-existing user/group at UID/GID 1000 first (stock pi/debian
-# users shipped in various base images) so the fixed-UID adduser can't
-# silently collide.
+# Create the fpp user plus hardware group memberships.
+# Image installs pin fpp to UID/GID 1000 and evict any pre-existing user/group
+# there first (stock pi/debian users shipped in various base images) so the
+# fixed-UID adduser can't silently collide.
+# Side installs (no --img) must leave existing accounts alone, as
+# README.Debian promises: fpp still gets UID/GID 1000 when it is free,
+# otherwise adduser/addgroup pick the next free id. Nothing at runtime
+# depends on the number -- FPP looks the fpp user up by name.
 add_fpp_user() {
     local existing_user_1000 existing_group_1000
+    local -a uid_opt=(--uid 1000) gid_opt=(--gid 1000)
     existing_user_1000=$(getent passwd 1000 | cut -d: -f1 || true)
     if [ -n "$existing_user_1000" ] && [ "$existing_user_1000" != "${FPPUSER}" ]; then
-        echo "FPP - Removing pre-existing UID 1000 user: ${existing_user_1000}"
-        userdel -r "${existing_user_1000}" 2>/dev/null || userdel "${existing_user_1000}" || true
+        if $isimage; then
+            echo "FPP - Removing pre-existing UID 1000 user: ${existing_user_1000}"
+            userdel -r "${existing_user_1000}" 2>/dev/null || userdel "${existing_user_1000}" || true
+        else
+            echo "FPP - UID 1000 belongs to '${existing_user_1000}'; keeping it, ${FPPUSER} gets the next free UID"
+            uid_opt=()
+        fi
     fi
     existing_group_1000=$(getent group 1000 | cut -d: -f1 || true)
     if [ -n "$existing_group_1000" ] && [ "$existing_group_1000" != "${FPPUSER}" ]; then
-        echo "FPP - Removing pre-existing GID 1000 group: ${existing_group_1000}"
-        groupdel "${existing_group_1000}" || true
+        if $isimage; then
+            echo "FPP - Removing pre-existing GID 1000 group: ${existing_group_1000}"
+            groupdel "${existing_group_1000}" || true
+        else
+            echo "FPP - GID 1000 belongs to '${existing_group_1000}'; keeping it, ${FPPUSER} gets the next free GID"
+            gid_opt=()
+        fi
     fi
 
     echo "FPP - Adding ${FPPUSER} user"
-    addgroup --gid 1000 ${FPPUSER}
-    adduser --uid 1000 --home ${FPPHOME} --shell /bin/bash --ingroup ${FPPUSER} \
+    addgroup "${gid_opt[@]}" ${FPPUSER}
+    adduser "${uid_opt[@]}" --home ${FPPHOME} --shell /bin/bash --ingroup ${FPPUSER} \
             --gecos "Falcon Player" --disabled-password ${FPPUSER}
     adduser ${FPPUSER} adm
     adduser ${FPPUSER} sudo
@@ -2397,6 +2443,17 @@ install_fpp_services() {
     systemctl disable exim4.service 2>/dev/null || true
     cp /opt/fpp/etc/systemd/fpp-exim-queue.timer /lib/systemd/system/
     systemctl enable fpp-exim-queue.timer
+
+    # Built before the distribution published the fixed PHP (Raspbian, for
+    # 32-bit Pi's, lags Debian by days): retry after each boot and daily until
+    # it is installed; the timer turns itself off then. See upgrade/160.
+    if [ "${OSID}" = "debian" ] || [ "${OSID}" = "raspbian" ]; then
+        if ! /opt/fpp/scripts/php_security_update --check; then
+            cp /opt/fpp/etc/systemd/fpp-php-security-update.service \
+               /opt/fpp/etc/systemd/fpp-php-security-update.timer /lib/systemd/system/
+            systemctl enable fpp-php-security-update.timer
+        fi
+    fi
     systemctl daemon-reload
 
     local svc
@@ -2435,6 +2492,11 @@ finalize_image_services() {
     rm -f /etc/systemd/network/*eth*
     rm -f /etc/systemd/network/*wlan*
     cp /opt/fpp/etc/systemd/network/* /etc/systemd/network
+
+    # A configured WiFi adapter that is missing must not stall boot (upgrade 152)
+    mkdir -p "/etc/systemd/system/wpa_supplicant@.service.d"
+    cp "/opt/fpp/etc/systemd/wpa_supplicant@.service.d/fpp-missing-adapter.conf" "/etc/systemd/system/wpa_supplicant@.service.d/"
+    cp /opt/fpp/etc/udev/rules.d/80-fpp-wpa-supplicant.rules /etc/udev/rules.d/
 }
 
 if $isimage; then
@@ -2651,18 +2713,15 @@ finalize_image_post_build() {
     systemctl mask winbind
     sed -i -e "s/winbind//" /etc/nsswitch.conf
 
-    # Stop all the pipewire daemons starting up when user fpp logs in.
-    # Note: target is /dev/null (the systemd convention for masking a unit).
-    # The old code had a typo ("/dev/mull") which just left dangling symlinks;
-    # fortunately those also prevented the units from loading, so the
-    # intended effect was preserved by accident.
-    mkdir -p /home/fpp/.config/systemd/user
-    local svc
-    for svc in pipewire.socket pipewire.service pipewire-pulse.service \
-               pipewire-pulse.socket wireplumber.service; do
-        ln -sf /dev/null /home/fpp/.config/systemd/user/$svc
-    done
-    chown -R fpp:fpp /home/fpp/.config
+    # Stop the distro's per-user PipeWire stack from starting when anyone logs
+    # in. FPP runs its own system instance (fpp-pipewire etc.); a user instance
+    # reads the same /etc/pipewire config, builds a second sink on the same
+    # sound card, and drags in rtkit and polkit. Mask globally, in
+    # /etc/systemd/user: an fppos upgrade syncs /etc but never /home, so masks
+    # in ~fpp/.config never reach a device upgraded that way.
+    systemctl --global mask pipewire.socket pipewire.service \
+        pipewire-pulse.socket pipewire-pulse.service \
+        wireplumber.service filter-chain.service
 
     # Remove stock distro users; FPP has its own.
     rm -rf /home/pi
