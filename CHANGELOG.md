@@ -1,3 +1,23 @@
+## [1.1.2] - 2026-10-23
+
+- Merge pull request #53 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.13.0 (jessica12ryan)
+- Merge pull request #52 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.9.0 (jessica12ryan)
+- Bump eslint from 10.12.0 to 10.13.0 in /flasher (dependabot[bot])
+- Bump electron from 44.7.0 to 44.9.0 in /flasher (dependabot[bot])
+- Merge pull request #51 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.7.0 (jessica12ryan)
+- Bump electron from 44.5.1 to 44.7.0 in /flasher (dependabot[bot])
+- Merge pull request #50 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.12.0 (jessica12ryan)
+- Bump eslint from 10.11.0 to 10.12.0 in /flasher (dependabot[bot])
+- Merge pull request #49 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-44.5.1 (jessica12ryan)
+- Merge pull request #48 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.13.0 (jessica12ryan)
+- Bump electron from 44.4.5 to 44.5.1 in /flasher (dependabot[bot])
+- Bump globals from 17.12.0 to 17.13.0 in /flasher (dependabot[bot])
+- Update CHANGELOG and FPP version (jessica12ryan)
+- Clean up CHANGELOG and update FPP version (jessica12ryan)
+- Update FPP version in build-release workflow (jessica12ryan)
+
+---
+
 ## [1.1.1] - 2026-10-03
 
 - Clean up CHANGELOG and update FPP version (jessica12ryan)
