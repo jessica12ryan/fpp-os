@@ -74,21 +74,20 @@ fpp-os/
 | Keyboard | US |
 | Hostname | `fpp` |
 | Mirror | `deb.debian.org` (latest Debian 13) |
-| Root password | `fpp` |
-| User | `fpp` / `fpp` |
+| Root password | `falcon` |
+| User | `None` |
 | Timezone | `America/New_York` |
 | Packages | `openssh-server`, `curl` (minimal) |
 | GUI | None |
 | Partitioning | **Uses 1st Disk - user confirms** |
-| FPP-Install | `FPP_Install.sh` Script runs on first boot
-| FPP-Install | `FPP_Post_Install.sh` Script runs immediately after FPP_Install has finished running
+| FPP_Install Pre / Post | Downloaded and merged with cached FPP_Install to run in sequence (Pre/Install/Post)
+| FPP-Install | `FPP_Install.sh` Merged install script runs on first boot
 
 ---
 
 ## 🔄 Automated releases
 
 The GitHub Actions workflow (`build-release.yml`) triggers on:
-- Every push to `master`
 - Manual trigger (Actions tab → Run workflow)
 
 Each release is tagged with version and includes:
