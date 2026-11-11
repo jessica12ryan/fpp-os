@@ -1,3 +1,23 @@
+## [1.1.3] - 2026-11-11
+
+- Revise CONTRIBUTING.md for installation details (jessica12ryan)
+- Merge pull request #59 from jessica12ryan/dependabot/npm_and_yarn/flasher/globals-17.14.0 (jessica12ryan)
+- Merge pull request #58 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-45.2.1 (jessica12ryan)
+- Bump electron from 45.0.0 to 45.2.1 in /flasher (dependabot[bot])
+- Bump globals from 17.13.0 to 17.14.0 in /flasher (dependabot[bot])
+- Merge pull request #60 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.14.0 (jessica12ryan)
+- Bump eslint from 10.13.0 to 10.14.0 in /flasher (dependabot[bot])
+- Merge pull request #54 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-45.0.0 (jessica12ryan)
+- Bump electron from 44.9.1 to 45.0.0 in /flasher (dependabot[bot])
+- Merge pull request #57 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-afddf7c95a (jessica12ryan)
+- Merge pull request #55 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-builder-26.18.0 (jessica12ryan)
+- Bump electron-builder from 26.15.3 to 26.18.0 in /flasher (dependabot[bot])
+- Bump the npm_and_yarn group across 1 directory with 2 updates (dependabot[bot])
+- Merge pull request #56 from jessica12ryan/dependabot/npm_and_yarn/flasher/npm_and_yarn-03e5534014 (jessica12ryan)
+- Bump electron in /flasher in the npm_and_yarn group across 1 directory (dependabot[bot])
+
+---
+
 ## [1.1.2] - 2026-10-23
 
 - Merge pull request #53 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.13.0 (jessica12ryan)
