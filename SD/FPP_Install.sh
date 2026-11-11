@@ -67,7 +67,7 @@ FPPBRANCH=${FPPBRANCH:-"master"}
 # user-supplied --os-version so the .img / .fppos filenames match what's
 # baked into the image itself).
 FPPIMAGEVER=${FPPIMAGEVER:-"2026-09"}
-FPPCFGVER="160"
+FPPCFGVER="163"
 FPPPLATFORM="UNKNOWN"
 FPPDIR=/opt/fpp
 FPPUSER=fpp
@@ -679,7 +679,7 @@ install_base_packages() {
                       php${PHPVER}-bcmath php${PHPVER}-sqlite3 php${PHPVER}-zip php${PHPVER}-xml ccache \
                       libtag1-dev \
                       vorbis-tools libgraphicsmagick++1-dev graphicsmagick-libmagick-dev-compat libdrogon-dev \
-                      gettext apt-utils x265 libtheora-dev libvorbis-dev libx265-dev iputils-ping mp3gain clang-format \
+                      gettext apt-utils x265 libtheora-dev libvorbis-dev libx265-dev iputils-ping clang-format \
                       libmosquitto-dev mosquitto-clients mosquitto libzstd-dev lzma zstd gpiod libgpiod-dev libjsoncpp-dev libcurl4-openssl-dev libnl-3-dev libnl-genl-3-dev \
                       fonts-freefont-ttf flex bison pkg-config libasound2-dev libsdl2-dev libsdl3-dev mesa-common-dev qrencode libusb-1.0-0-dev \
                       pipewire pipewire-bin pipewire-alsa pipewire-pulse pipewire-jack pipewire-audio-client-libraries wireplumber \
@@ -1232,6 +1232,14 @@ EOF
             sed -i 's/ snd_bcm2835\.enable_headphones=[0-9]*//g' ${BOOTDIR}/cmdline.txt
             sed -i 's/ snd_bcm2835\.enable_hdmi=[0-9]*//g' ${BOOTDIR}/cmdline.txt
         fi
+
+        # Cape EEPROMs emulated in a microcontroller's flash hold the bus
+        # (NAK) while a flash sector is erased: tens of ms, and a few hundred
+        # on worn flash.  at24's default 25ms write timeout gives up first.
+        # The BeagleBone 64 extlinux.conf sets the same.
+        echo "FPP - Allowing slow cape EEPROM writes"
+        grep -q 'at24\.write_timeout=' ${BOOTDIR}/cmdline.txt || \
+            sed -i 's/$/ at24.write_timeout=1000/' ${BOOTDIR}/cmdline.txt
 
         echo "FPP - Updating root partition device"
         sed -i 's/root=PARTUUID=[A-Fa-f0-9-]* /root=\/dev\/mmcblk0p2 /g' ${BOOTDIR}/cmdline.txt
