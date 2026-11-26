@@ -37,8 +37,23 @@ d-i clock-setup/ntp boolean true
 d-i partman-auto/method string regular
 d-i partman-auto/choose_recipe select atomic
 
-# Automatically use first available disk
-d-i partman-auto/init_automatically_partition select biggest_free
+# Explicitly target the internal disk. Without this, partman's automatic
+# selection can pick the USB install media on bare-metal installs.
+# partman/early_command runs just before partitioning, when device names are
+# known: skip removable devices and the disk backing /cdrom (the install
+# media), then use the first remaining internal disk. If none is found,
+# partman keeps its default behaviour.
+# envsubst only substitutes the VERSION and FPP_INSTALL_BRANCH placeholders,
+# so the shell variables below pass through unchanged.
+d-i partman/early_command string \
+  CDSRC=$(awk '$2 == "/cdrom" { print $1; exit }' /proc/mounts 2>/dev/null); \
+  TARGET=$(for dev in $(list-devices disk); do \
+    if [ "$(cat "/sys/block/${dev#/dev/}/removable" 2>/dev/null)" = "0" ] && \
+       [ "${CDSRC#"$dev"}" = "$CDSRC" ]; then \
+      echo "$dev"; break; \
+    fi; \
+  done); \
+  if [ -n "$TARGET" ]; then debconf-set partman-auto/disk "$TARGET"; fi
 
 # Wipe existing partitions
 d-i partman-partitioning/confirm_write_new_label boolean true

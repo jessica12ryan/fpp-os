@@ -79,7 +79,7 @@ fpp-os/
 | Timezone | `America/New_York` |
 | Packages | `openssh-server`, `curl` (minimal) |
 | GUI | None |
-| Partitioning | **Uses 1st Disk - user confirms** |
+| Partitioning | **Uses first internal (non-removable) disk; USB install media excluded** |
 | FPP_Install Pre / Post | Downloaded and merged with cached FPP_Install to run in sequence (Pre/Install/Post)
 | FPP-Install | `FPP_Install.sh` Merged install script runs on first boot
 

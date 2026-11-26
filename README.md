@@ -80,6 +80,8 @@ This guide covers installation on:
 - USB drive (4GB+)
 - Completed the steps above to download and flash ISO to USB
 
+> **Note:** The installer automatically targets the first internal (non-removable) disk and ignores the USB install media. All data on the target disk will be erased — detach any disk you want to keep before installing.
+
 #### Steps
 
 1. Insert the USB containing FPP-OS into the target PC.
