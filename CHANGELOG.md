@@ -1,3 +1,18 @@
+## [1.1.4] - 2026-11-26
+
+- Merge pull request #65 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-45.4.1 (jessica12ryan)
+- Bump electron from 45.3.3 to 45.4.1 in /flasher (dependabot[bot])
+- fix(flasher): override minimatch to patch GHSA-g3hv-75wg-m249 (jessica12ryan)
+- fix: target internal disk instead of USB install media on bare-metal installs (jessica12ryan)
+- Merge pull request #62 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-45.3.3 (jessica12ryan)
+- Bump electron from 45.2.3 to 45.3.3 in /flasher (dependabot[bot])
+- Merge pull request #63 from jessica12ryan/dependabot/npm_and_yarn/flasher/eslint-10.15.0 (jessica12ryan)
+- Bump eslint from 10.14.0 to 10.15.0 in /flasher (dependabot[bot])
+- Merge pull request #61 from jessica12ryan/dependabot/npm_and_yarn/flasher/electron-45.2.3 (jessica12ryan)
+- Bump electron from 45.2.1 to 45.2.3 in /flasher (dependabot[bot])
+
+---
+
 ## [1.1.3] - 2026-11-11
 
 - Revise CONTRIBUTING.md for installation details (jessica12ryan)
